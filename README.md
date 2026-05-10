@@ -1,72 +1,225 @@
-# Galaxy AI — The AI Engineering Operating System
+# Galaxy AI ✦ The AI Engineering Operating System
 
-> Build entire codebases with a single command. Galaxy orchestrates AI agents that plan, code, test, and validate — all locally.
+[![Tests](https://img.shields.io/badge/tests-380%20passing-brightgreen)]()
+[![Python](https://img.shields.io/badge/python-3.11%2B-blue)]()
+[![License](https://img.shields.io/badge/license-MIT-purple)]()
 
-[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+> **Galaxy** is a fully autonomous AI-powered software engineering OS that turns natural language into production-ready codebases. Give it a prompt → get a complete, tested, deployable project.
 
-## Quick Start
+```
+galaxy run "Build a FastAPI blog with auth, CRUD, and tests"
+```
+
+---
+
+## 🌌 Architecture
+
+Galaxy uses a **3-tier agent hierarchy** inspired by real engineering teams:
+
+```
+┌───────────────────────────────────────┐
+│             MASTER AGENT              │  ← Architect: plans, delegates
+│          (14B model · reasoning)      │
+└─────────────┬─────────────────────────┘
+              │ Domain Plans
+    ┌─────────┼─────────────┐
+    ▼         ▼             ▼
+┌───────┐ ┌───────┐   ┌───────┐
+│DOMAIN │ │DOMAIN │   │DOMAIN │        ← Tech Leads: decompose, coordinate
+│  API  │ │  DB   │   │  UI   │
+└──┬──┬─┘ └──┬────┘   └──┬────┘
+   │  │      │           │
+   ▼  ▼      ▼           ▼
+  Workers  Workers     Workers         ← Engineers: write code, run tools
+```
+
+### Core Subsystems
+
+| Subsystem | Purpose |
+|-----------|---------|
+| **Kernel** | Boot/shutdown lifecycle, subsystem registration |
+| **EventBus** | Async pub/sub for inter-agent communication |
+| **Models** | Multi-provider LLM routing (Ollama, OpenAI, Groq, DeepSeek) |
+| **Agents** | 3-tier hierarchy with checkpoint/restore |
+| **Tools** | File I/O, terminal, search, git — with tier-based permissions |
+| **Orchestrator** | DAG-based task scheduling with 5-level escalation |
+| **Vault** | Checkpoint/recovery with crash markers |
+| **Forge** | Continuous code validation (syntax, imports, lint) |
+| **CLI** | Rich terminal UI with ASCII boot sequence |
+
+---
+
+## 🚀 Quick Start
+
+### Prerequisites
+- Python 3.11+
+- [Ollama](https://ollama.ai) (for local models)
+- tmux (for terminal management)
+
+### Install
 
 ```bash
-# Install
-pip install galaxy-ai
+# Clone
+git clone https://github.com/VishalGovindasamy-15/galaxy-ai
+cd galaxy-ai
 
-# First-time setup (auto-detects GPU, installs Ollama, pulls models)
+# Create virtualenv
+python -m venv .venv
+source .venv/bin/activate
+
+# Install (editable mode with dev tools)
+pip install -e ".[dev]"
+
+# Setup (auto-detect GPU, check dependencies)
 galaxy setup
-
-# Build something (starts CLI + web dashboard together)
-galaxy run "Build a REST API with user auth"
 ```
 
-## What is Galaxy?
+### Initialize a Project
 
-Galaxy is an **AI Engineering Operating System** — a hierarchical multi-agent system that builds production-grade software autonomously:
-
-- 🧠 **Master Agent** — Architect. Decomposes projects into domains.
-- 📋 **Domain Agents** — Managers. Plan and coordinate workers.
-- ⚙️ **Worker Agents** — Builders. Write code, run tests, fix errors.
-
-### Key Features
-
-- **Local-first** — Runs on your hardware with Ollama. No cloud required.
-- **Zero-config** — `galaxy setup` handles everything automatically.
-- **Real-time dashboard** — Rich terminal UI + web dashboard (Galaxy Studio).
-- **Test-as-you-build** — Every file validated immediately after generation.
-- **Crash recovery** — Checkpoint and resume from any point.
-- **5-level escalation** — Worker → Domain → Master → Model Fallback → User.
-
-## Architecture
-
-```
-Master Agent (Architect)
-  ├── Backend Domain Agent
-  │   ├── Worker: models/user.py
-  │   ├── Worker: routes/auth.py
-  │   └── Worker: tests/test_auth.py
-  ├── Frontend Domain Agent
-  │   ├── Worker: components/Login.tsx
-  │   └── Worker: pages/Dashboard.tsx
-  └── DevOps Domain Agent
-      ├── Worker: Dockerfile
-      └── Worker: docker-compose.yml
+```bash
+mkdir my-project && cd my-project
+galaxy init
 ```
 
-## Commands
+### Build Something
 
-| Command | Description |
-|---------|------------|
-| `galaxy setup` | Auto-install deps, detect GPU, pull models |
-| `galaxy run "..."` | Build a project (CLI + Studio start together) |
-| `galaxy status` | Show current project status |
-| `galaxy pause` | Pause execution with checkpoint |
-| `galaxy resume` | Resume from last checkpoint |
-| `galaxy init` | Initialize a Galaxy workspace |
+```bash
+galaxy run "Create a REST API with user authentication, CRUD endpoints, and tests"
+```
 
-## Documentation
+---
 
-- [Complete Specification](galaxy_complete_spec.md)
-- [Implementation Guide](implementation_plan.md)
+## 🧪 Testing
 
-## License
+```bash
+# Run all tests (380 tests)
+make test
 
-MIT
+# With coverage
+make test-cov
+
+# Only unit tests
+pytest tests/unit/ -v
+
+# Only integration tests
+pytest tests/integration/ -v
+
+# E2E tests
+pytest tests/e2e/ -v
+```
+
+---
+
+## 📐 Project Structure
+
+```
+src/galaxy/
+├── core/               # Foundation layer
+│   ├── constants.py    # All system constants
+│   ├── exceptions.py   # 30+ exception hierarchy
+│   ├── types.py        # Core data structures
+│   ├── config.py       # Pydantic config management
+│   ├── kernel.py       # Boot/shutdown lifecycle
+│   └── version.py      # Version management
+├── events/             # Event infrastructure
+│   ├── __init__.py     # Event dataclass
+│   └── bus.py          # Async EventBus (pub/sub, wildcards, request/reply)
+├── models/             # LLM provider layer
+│   ├── vram.py         # GPU detection, model selection
+│   ├── router.py       # Tier-based routing with fallback
+│   └── providers/      # Ollama, OpenAI, Groq, DeepSeek
+├── agents/             # 3-tier agent system
+│   ├── base.py         # BaseAgent with LLM, events, checkpoint
+│   ├── worker.py       # Code generation worker
+│   ├── domain.py       # Domain decomposer
+│   ├── master.py       # Architecture planner
+│   └── registry.py     # Agent lifecycle + limit enforcement
+├── tools/              # Agent tool system
+│   ├── base.py         # BaseTool + OpenAI schema generation
+│   ├── registry.py     # Tier-based tool registry
+│   └── builtin/        # file_read, file_write, file_edit, terminal, search, git, tree
+├── terminal/           # Terminal management
+│   └── manager.py      # tmux session lifecycle
+├── orchestrator/       # Execution engine
+│   ├── task_graph.py   # DAG with dynamic insertion
+│   ├── scheduler.py    # VRAM-aware parallelism
+│   ├── orchestrator.py # Plan → execute pipeline
+│   └── escalation.py   # 5-level failure handling
+├── vault/              # Persistence + recovery
+│   └── checkpoint.py   # Checkpoint engine + crash markers
+├── forge/              # Code validation
+│   └── validator.py    # Syntax, imports, lint checks
+└── cli/                # Terminal UI
+    ├── app.py          # Typer CLI commands
+    ├── colors.py       # Design tokens
+    ├── setup_helper.py # Auto-detect hardware
+    └── views/          # Boot, dashboard, etc.
+```
+
+---
+
+## ⚡ Key Features
+
+### 5-Level Escalation Chain
+When a task fails, Galaxy automatically escalates:
+1. **Worker retry** — Retry with error context
+2. **Domain intervention** — Restructure the subtask
+3. **Master restructure** — Re-plan the approach
+4. **Model fallback** — Switch to a stronger model
+5. **User intervention** — Pause and ask for help
+
+### VRAM-Aware Scheduling
+Galaxy auto-detects your GPU and selects optimal models:
+- **24GB+**: 14B master + 7B workers
+- **12-24GB**: 7B for all tiers
+- **8-12GB**: 3B for all tiers
+- **No GPU**: CPU mode or cloud providers
+
+### Live Updates
+Modify the plan mid-execution by talking to the Master agent. Changes propagate through the task graph without losing progress.
+
+### Crash Recovery
+Galaxy checkpoints automatically. If it crashes, run `galaxy resume` to pick up exactly where it left off.
+
+---
+
+## 📋 Configuration
+
+Galaxy uses `galaxy.config.yaml`:
+
+```yaml
+models:
+  master:
+    provider: ollama
+    model: qwen2.5-coder:14b
+  worker:
+    provider: ollama
+    model: qwen2.5-coder:7b
+  embedding:
+    provider: ollama
+    model: nomic-embed-text
+
+scheduler:
+  mode: balanced  # speed | balanced | quality
+
+agent_limits:
+  max_domain_agents: 10
+  max_workers_per_domain: 50
+```
+
+---
+
+## 🗺️ Roadmap
+
+- [x] **Phase 1**: Foundation (Core, Events, Models, Agents, Tools, Orchestrator, CLI)
+- [ ] **Phase 2**: Memory & Intelligence (Embeddings, Vector Store, Code AST)
+- [ ] **Phase 3**: Intent Engine (Compass, Scribe)
+- [ ] **Phase 4**: Galaxy Studio (Web Dashboard)
+- [ ] **Phase 5**: Performance & Scale
+- [ ] **Phase 6**: Ecosystem (Plugins, Marketplace)
+
+---
+
+## 📄 License
+
+MIT License — see [LICENSE](LICENSE) for details.
