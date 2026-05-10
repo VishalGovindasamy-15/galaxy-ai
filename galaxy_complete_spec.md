@@ -2,6 +2,7 @@
 
 > **An AI-Native Hierarchical Multi-Agent Software Engineering Operating System**
 > Local-first · Resource-aware · Fully observable · Self-healing
+> **Repository: https://github.com/VishalGovindasamy-15/galaxy-ai**
 
 ---
 
@@ -290,7 +291,7 @@ overrides:
 **Features:**
 - **Role separated from Model** — don't hardcode `backend_worker = specific_model`
 - **Capability-based routing** — simple CRUD → small model, complex architecture → large model
-- **Automatic escalation** — worker fails 3x → try stronger model → escalate to domain → escalate to master
+- **Hierarchical escalation chain** — 5-level escalation: Worker retry (3x) → Domain Agent intervenes → Master Agent restructures → Fallback to stronger model → User escalation via Studio
 - **Local + Cloud hybrid** — master on cloud, workers on local
 - **Dynamic hardware awareness** — 8GB VRAM → use 7B workers; 24GB → use 14B workers
 - **Hot model pooling** — keep frequently used models warm in memory, reuse across workers
@@ -475,7 +476,7 @@ Task Created → Scheduler Event → Worker Assigned → Execution Started
 → Tool Completed → Memory Updated → Dashboard Updated
 ```
 
-**Implementation:** Redis Streams (initial), NATS or Kafka (later)
+**Implementation:** In-memory async event bus (default, zero-setup), Redis Streams (optional for multi-machine clusters)
 
 **Event Types:**
 - Agent lifecycle (created, started, completed, failed, killed)
@@ -532,13 +533,41 @@ Extensibility for:
 ## 6. User Interface
 
 ### 6.1 CLI (Phase 1 — Primary)
-- Robust CLI runtime built first
+
+**Zero-Config Installation:**
+```bash
+# Only prerequisites: Python 3.11+ and Git. That's it.
+pip install galaxy-ai       # Installs ALL dependencies (Studio included)
+galaxy setup                # Auto-installs tmux, Ollama, pulls models
+galaxy run "Build an API"   # Starts CLI + web dashboard TOGETHER
+```
+
+**What `galaxy setup` handles automatically:**
+- Checks Python version (≥3.11)
+- Installs tmux (apt/brew/pacman auto-detect)
+- Installs Ollama (curl install script)
+- Detects GPU + available VRAM (nvidia-smi)
+- Auto-selects best models for hardware (24GB→ 14B, 12GB→07B, 8GB→3B)
+- Pulls selected models via Ollama
+- Generates galaxy.config.yaml
+
+**Unified Startup — `galaxy run` starts EVERYTHING:**
+- Terminal: Rich CLI with live progress
+- Browser: auto-opens http://localhost:8420 (Galaxy Studio)
+- Both run simultaneously. No separate `galaxy studio` command needed.
+
+**CLI Features:**
 - Master/domain/worker orchestration
 - tmux terminal management
 - Task graph visualization (ASCII)
 - Configuration management
+- `galaxy setup` / `galaxy run` / `galaxy pause` / `galaxy resume`
+- `galaxy checkpoint` / `galaxy hibernate` / `galaxy wake`
+- `galaxy plugin` / `galaxy blueprint`
 
-### 6.2 Web Dashboard (Phase 2 — AI Engineering Control Center)
+### 6.2 Web Dashboard (Phase 1 built-in — AI Engineering Control Center)
+
+> **Studio starts WITH Galaxy automatically — no separate install or command needed.**
 
 **NOT a chatbot UI. An operations control center.**
 
@@ -600,6 +629,84 @@ Extensibility for:
 - Swap models mid-run
 - Edit architecture, reject outputs
 - Restart pipelines
+
+**K. Model Management** — Full model lifecycle through web
+- View all loaded models (Ollama local + cloud providers)
+- **Swap models per tier** — change master/domain/worker models live
+- Pull new Ollama models from web UI (equivalent to `ollama pull`)
+- Set cloud API keys (OpenAI, Anthropic, Groq) via settings panel
+- Live VRAM allocation chart: which models loaded, how much VRAM used
+- Model comparison table: speed, quality, cost, success rate per model
+- One-click model routing: "Use GPT-4o for Master, local 7B for workers"
+- Model auto-suggest: Galaxy recommends best model for your hardware
+
+**L. Checkpoint Manager** — Browse, restore, export checkpoints
+- Checkpoint timeline: visual history of all checkpoints
+- Click any checkpoint to see: task graph snapshot, agents active, progress %
+- **Restore to any checkpoint** — one click rollback to previous state
+- Compare two checkpoints side-by-side (what changed?)
+- Create manual checkpoint from dashboard
+- **Export .vault file** — download project state for migration
+- **Import .vault file** — upload and restore from another machine
+- Hibernate/Wake buttons for long-term project storage
+- Checkpoint auto-cleanup settings (max count, max age)
+
+**M. Configuration Editor** — Visual config for `galaxy.config.yaml`
+- Forms-based editor for ALL settings:
+  - Model assignments per tier
+  - Agent limits (max workers, retry limits)
+  - Scheduler mode (speed/balanced/quality)
+  - Memory settings
+  - Redis/Database connection (optional upgrades from defaults)
+  - Event bus backend (memory → Redis upgrade)
+- **Live apply** — change config without restarting Galaxy
+- Config presets: "Fast Mode", "Quality Mode", "Low VRAM Mode"
+- Config diff: see what changed from defaults
+- Export/import config files
+
+**N. Plugin Manager** — Install, configure, monitor plugins
+- Browse available plugins (local + community registry)
+- One-click install with permission review dialog
+- Plugin health status (healthy/unhealthy/crashed/disabled)
+- Configure plugin permissions via UI
+- Enable/disable plugins with toggle
+- View plugin logs and error history
+- Plugin resource usage (memory, CPU per plugin)
+- Update management: check for updates, approve/auto-install
+
+**O. Blueprint Manager** — Browse, install, customize templates
+- Gallery view of available blueprints (cards with description, stack, rating)
+- Install/create project from blueprint
+- Customize stack (change frontend/backend/database via dropdowns)
+- Preview generated directory structure before scaffolding
+- Create custom blueprint from existing project
+- Blueprint editor for advanced users (YAML)
+
+**P. Policy Editor** — Create and manage governance policies
+- Visual rule builder: "IF file contains hardcoded secret THEN block + alert"
+- Pre-built policy templates (security, compliance, quality)
+- Toggle enforcement modes: block / warn / audit
+- Policy violation history with drill-down to specific violations
+- Compliance score dashboard (overall + per-domain)
+
+**Q. Budget & Cost Manager** — Set and monitor budgets
+- Set token budgets per session/project
+- Set cloud API spending limits (USD)
+- Budget usage graphs (current vs limit)
+- Cost breakdown by: model, agent, domain, task type
+- Model efficiency leaderboard (cost per successful task)
+- Alert configuration (warn at 75%, pause at 95%)
+- Historical cost trends over sessions
+- Export cost reports (CSV/PDF)
+
+**R. Memory Manager** — Browse, search, edit memories
+- Search across all memory levels with filters
+- View memory entries with metadata (tags, age, access count)
+- Edit/delete individual memories
+- Manual memory compression trigger
+- Memory tier visualization (hot/warm/cold/frozen counts)
+- Archive exploration (browse frozen memories)
+- Memory health score and recommendations
 
 ### 6.3 Visibility Levels
 
@@ -716,14 +823,16 @@ All configurable through Web UI or CLI.
 |-----------|-----------|
 | **Backend** | FastAPI (Python), asyncio, WebSockets |
 | **Agent Runtime** | Python async + event bus |
-| **Event Bus** | Redis Streams (Phase 1), NATS (Phase 3) |
-| **Database** | PostgreSQL |
-| **Vector Memory** | Qdrant or Chroma |
-| **Frontend** | React, Next.js, Tailwind, WebSockets |
-| **Local LLM** | Ollama, vLLM |
-| **Terminal Control** | tmux, subprocess, pexpect, asyncio.create_subprocess_exec |
+| **Event Bus** | In-memory async (default), Redis Streams (optional for clusters) |
+| **Database** | SQLite (default, zero-setup), PostgreSQL (optional enterprise) |
+| **Vector Memory** | Numpy cosine similarity (default), Qdrant/Chroma (optional) |
+| **Frontend** | React, Vite, WebSockets |
+| **Local LLM** | Ollama (default), vLLM (optional self-hosted) |
+| **Cloud LLM** | OpenAI, Anthropic, Google Gemini, Groq, DeepSeek, any OpenAI-compatible |
+| **Terminal Control** | tmux (auto-installed by `galaxy setup`) |
 | **Schema Validation** | Pydantic (backend), Zod (frontend) |
 | **Process Management** | Custom scheduler + resource monitor |
+| **Dashboard** | FastAPI + WebSocket (included by default, starts with `galaxy run`) |
 
 ---
 
@@ -742,21 +851,27 @@ The absolute minimum to run Galaxy end-to-end on a single machine.
 - [ ] Tool Execution Layer (terminal, file, search, git)
 - [ ] Permission & Sandbox Layer (basic)
 - [ ] Task Graph Engine (basic DAG)
-- [ ] tmux terminal orchestration
-- [ ] Model Routing (Ollama integration)
+- [ ] tmux terminal orchestration (auto-installed by `galaxy setup`)
+- [ ] Model Routing (Ollama + 9 cloud/self-hosted providers)
 - [ ] Basic VRAM-aware scheduler
-- [ ] Agent communication protocol (Event Bus — Redis)
+- [ ] Agent communication protocol (in-memory Event Bus, Redis optional)
 - [ ] CLI interface with status/control
+- [ ] `galaxy setup` command (auto-install tmux, Ollama, pull models)
 - [ ] Basic logging and event tracking
 - [ ] Configuration system (YAML)
+- [ ] Galaxy Studio web dashboard (starts WITH `galaxy run`)
+- [ ] Continuous Validation Pipeline (Forge basic: syntax + imports + lint)
+- [ ] Escalation Manager (Worker → Domain → Master → Fallback → User)
 - [ ] **Vault — Basic Checkpointing** (task graph persistence only)
 - [ ] **Vault — Crash Marker** (detect unclean shutdown)
 
-**Deliverable:** Build small-medium projects end-to-end via CLI. Survives restarts with basic task state recovery.
+**Deliverable:** Build small-medium projects end-to-end via CLI + web dashboard. Survives restarts with basic task state recovery. Zero manual dependency management.
 
 **Success criteria:**
-- `galaxy run "Build a REST API with auth"` → produces working code
+- `pip install galaxy-ai && galaxy setup && galaxy run "Build a REST API"` → works
+- `galaxy run` starts BOTH CLI + web dashboard at http://localhost:8420
 - Master decomposes → Domain plans → Workers execute → code compiles + tests pass
+- Worker fails 3x → Domain intervenes → Master restructures if needed
 - `galaxy pause` / `galaxy resume` preserves task progress
 
 ---
@@ -823,7 +938,7 @@ Galaxy enforces consistency, trust, and policies — code quality that doesn't d
 - Sentinel detects and blocks architecture violations in real-time
 - Security policies block hardcoded secrets, `eval()`, missing auth
 - Trust scores accurately predict which outputs need human review
-- Agent with 3+ consecutive low-trust outputs → auto-escalated to stronger model
+- Agent with 3+ consecutive low-trust outputs → auto-escalated via Escalation Manager (Worker → Domain → Master → Fallback Model → User)
 
 ---
 
@@ -898,12 +1013,13 @@ Galaxy becomes extensible, templated, and distributed.
 - [ ] **Governance — Compliance Policies** (GDPR, HIPAA, SOC2 rules)
 - [ ] **Governance — Deployment Policies** (staging gates, approval chains)
 - [ ] **Governance — Policy Inheritance** (Galaxy → Organization → Project)
-- [ ] **Studio — Web Dashboard** (full orchestration UI)
+- [ ] **Studio — Advanced Management Views** (Model, Checkpoint, Config, Plugin, Blueprint, Policy, Budget, Memory managers)
 - [ ] **Studio — Chat Interface** (chat with Master Agent)
 - [ ] **Studio — Agent Inspector** (watch agents in real-time)
 - [ ] **Studio — Resource Monitor** (GPU/VRAM/CPU dashboard)
 - [ ] **Studio — Trust Dashboard** (project trust overview, low-trust alerts)
 - [ ] **Studio — Policy Dashboard** (compliance status, violation history)
+- [ ] **Studio — Validation Pipeline View** (file-by-file pass/fail status)
 
 **Deliverable:** Galaxy runs across machines, supports plugins, uses templates, and has a full web UI. Enterprise-ready governance.
 
@@ -952,11 +1068,11 @@ Galaxy reaches full autonomy — self-improving, self-healing, self-optimizing.
 ### Phase Summary
 
 ```
-Phase 1: Foundation          → Galaxy WORKS (single machine, CLI)
+Phase 1: Foundation          → Galaxy WORKS (single machine, CLI + Studio)
 Phase 2: Memory & Intel      → Galaxy REMEMBERS and UNDERSTANDS
 Phase 3: Quality & Gov       → Galaxy ENFORCES standards
 Phase 4: Collaboration       → Galaxy SCALES (parallel agents, self-optimizes)
-Phase 5: Enterprise          → Galaxy EXTENDS (plugins, templates, clusters, UI)
+Phase 5: Enterprise          → Galaxy EXTENDS (plugins, templates, clusters, advanced UI)
 Phase 6: Autonomous          → Galaxy EVOLVES (self-improving, self-healing)
 ```
 
@@ -1093,7 +1209,7 @@ Galaxy Cluster solves this by distributing agents across machines while maintain
 | **Control Node** | Master agent, orchestrator, scheduler, event bus, dashboard, memory DB | High RAM, moderate CPU, optional GPU |
 | **Compute Node** | Domain/worker agents, terminal execution, build/test | High CPU, moderate RAM, optional GPU |
 | **Inference Node** | LLM model hosting (Ollama/vLLM), embedding generation | **High VRAM GPU**, moderate CPU |
-| **Storage Node** | Shared filesystem, vector DB, PostgreSQL, Redis | High disk I/O, moderate RAM |
+| **Storage Node** | Shared filesystem, vector DB, PostgreSQL/SQLite, Redis (cluster mode) | High disk I/O, moderate RAM |
 | **Hybrid Node** | Any combination of the above | Varies |
 
 > [!TIP]
@@ -1131,12 +1247,12 @@ Place agent on optimal node
 
 ### 13.5 Cross-Machine Communication
 
-All communication goes through the **Event Bus** (Redis Streams / NATS), NOT direct agent-to-agent calls:
+All communication goes through the **Event Bus** (in-memory for single-machine, Redis Streams for multi-machine clusters), NOT direct agent-to-agent calls:
 
 ```
 Agent on Node A
       ↓
-Publishes event to Event Bus (Redis/NATS)
+Publishes event to Event Bus (Redis/NATS for cluster mode)
       ↓
 Scheduler on Control Node receives event
       ↓
@@ -1279,8 +1395,8 @@ cluster:
     mount: "/shared/projects"
     
   event_bus:
-    type: nats  # redis | nats
-    url: "nats://192.168.1.1:4222"
+    type: redis  # memory (default single-machine) | redis | nats (cluster mode)
+    url: \"redis://192.168.1.1:6379/0\"  # Only needed for cluster mode
 ```
 
 ### 13.11 Security in Cluster
