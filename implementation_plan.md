@@ -40,36 +40,36 @@ Terminal:     tmux
 
 > **Goal:** End-to-end Galaxy running: boot → plan → execute → validate → output
 
-### Week 1-2: Core Foundation
+### Week 1-2: Core Foundation ✅ COMPLETE (215 tests passing)
 
-- [ ] **pyproject.toml** — Package config, dependencies, entry points
-- [ ] **README.md** — Project overview
-- [ ] **Makefile** — Dev commands (test, lint, build)
-- [ ] **.env.example** — Environment template
-- [ ] **src/galaxy/__init__.py** — Version, exports
-- [ ] **src/galaxy/__main__.py** — `python -m galaxy`
+- [x] **pyproject.toml** — Package config, dependencies, entry points ✅
+- [x] **README.md** — Project overview ✅
+- [x] **Makefile** — Dev commands (test, lint, build) ✅
+- [x] **.env.example** — Environment template ✅
+- [x] **src/galaxy/__init__.py** — Version, exports ✅
+- [x] **src/galaxy/__main__.py** — `python -m galaxy` ✅
 
 ---
 
-- [ ] **core/constants.py** — System constants, defaults
-  - [ ] test_constants.py
-- [ ] **core/exceptions.py** — All custom exceptions
-  - [ ] test_exceptions.py → test_all_exceptions_have_messages()
-- [ ] **core/types.py** — Shared type definitions (AgentTier, TaskStatus, etc.)
-  - [ ] test_types.py → test_agent_tier_enum(), test_task_status_transitions(), test_dataclass_serialization()
-- [ ] **core/config.py** — Configuration loader (YAML + env vars)
-  - [ ] test_config.py → test_load_default_config(), test_load_from_yaml(), test_env_var_override(), test_invalid_config_raises(), test_model_config_resolve_api_key()
-- [ ] **core/version.py** — Version info
-- [ ] **events/events.py** — Event data models
-  - [ ] test_events.py → test_event_creation(), test_event_serialization()
-- [ ] **events/bus.py** — In-memory async EventBus
-  - [ ] test_bus.py → test_publish_subscribe(), test_multiple_subscribers(), test_unsubscribe(), test_request_reply(), test_topic_filtering()
-- [ ] **core/kernel.py** — GalaxyKernel (skeleton)
-  - [ ] test_kernel.py → test_boot_initializes_subsystems(), test_shutdown_cleans_up()
-- [ ] ✅ **MODULE GATE:** test_core_integration.py
-  - [ ] test_kernel_boots_with_default_config()
-  - [ ] test_event_bus_works_after_boot()
-  - [ ] test_kernel_boot_and_shutdown_lifecycle()
+- [x] **core/constants.py** — System constants, defaults ✅
+  - [x] test_constants.py ✅ (27 tests)
+- [x] **core/exceptions.py** — All custom exceptions ✅
+  - [x] test_exceptions.py ✅ (42 tests)
+- [x] **core/types.py** — Shared type definitions (AgentTier, TaskStatus, etc.) ✅
+  - [x] test_types.py ✅ (71 tests)
+- [x] **core/config.py** — Configuration loader (YAML + env vars) ✅
+  - [x] test_config.py ✅ (18 tests)
+- [x] **core/version.py** — Version info ✅
+- [x] **events/events.py** — Event data models ✅
+  - [x] test_events.py ✅ (13 tests)
+- [x] **events/bus.py** — In-memory async EventBus ✅
+  - [x] test_bus.py ✅ (18 tests)
+- [x] **core/kernel.py** — GalaxyKernel (skeleton) ✅
+  - [x] test_kernel.py ✅ (12 tests)
+- [x] ✅ **MODULE GATE:** test_core_integration.py ✅
+  - [x] test_kernel_boots_with_default_config() ✅
+  - [x] test_event_bus_works_after_boot() ✅
+  - [x] test_kernel_boot_and_shutdown_lifecycle() ✅
 
 ### Week 3-4: Model + Agent Layer
 
