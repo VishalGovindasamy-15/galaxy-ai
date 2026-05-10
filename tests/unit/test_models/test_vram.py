@@ -95,16 +95,28 @@ class TestSelectModels:
     def test_high_vram(self) -> None:
         models = select_models_for_vram(24.0)
         assert "14b" in models["master"]
+        assert "7b" in models["domain"]
         assert "7b" in models["worker"]
 
     def test_medium_vram(self) -> None:
         models = select_models_for_vram(12.0)
         assert "7b" in models["master"]
+        assert "7b" in models["domain"]
+
+    def test_moderate_vram(self) -> None:
+        """6GB GPU like RTX 3050 — 7b master, 3b domain/worker."""
+        models = select_models_for_vram(6.0)
+        assert "7b" in models["master"]
+        assert "3b" in models["domain"]
+        assert "3b" in models["worker"]
 
     def test_low_vram(self) -> None:
-        models = select_models_for_vram(8.0)
+        models = select_models_for_vram(3.0)
         assert "3b" in models["master"]
+        assert "3b" in models["domain"]
 
     def test_no_vram(self) -> None:
         models = select_models_for_vram(0.0)
-        assert models["master"]  # Should still return something
+        assert "3b" in models["master"]  # Never falls to 1.5b now
+        assert "domain" in models  # Domain model always present
+

@@ -178,6 +178,10 @@ def estimate_model_vram(model_name: str) -> float:
 def select_models_for_vram(available_vram_gb: float) -> dict[str, str]:
     """Auto-select best models based on available VRAM.
 
+    Ollama shares model weights — loading the same model for multiple agents
+    only uses VRAM once. So we base the recommendation on the *largest* model
+    that fits, not per-agent.
+
     Args:
         available_vram_gb: Available VRAM in GB.
 
@@ -185,6 +189,7 @@ def select_models_for_vram(available_vram_gb: float) -> dict[str, str]:
         Dict with keys 'master', 'domain', 'worker', 'embedding' mapping to model names.
     """
     if available_vram_gb >= 24.0:
+        # 24GB+: 14B master, 7B domain/workers
         return {
             "master": "qwen2.5-coder:14b",
             "domain": "qwen2.5-coder:7b",
@@ -192,13 +197,23 @@ def select_models_for_vram(available_vram_gb: float) -> dict[str, str]:
             "embedding": "nomic-embed-text",
         }
     elif available_vram_gb >= 12.0:
+        # 12-24GB: 7B for all tiers
         return {
             "master": "qwen2.5-coder:7b",
             "domain": "qwen2.5-coder:7b",
             "worker": "qwen2.5-coder:7b",
             "embedding": "nomic-embed-text",
         }
-    elif available_vram_gb >= 8.0:
+    elif available_vram_gb >= 6.0:
+        # 6-12GB: 7B master (it runs one at a time), 3B domain/workers
+        return {
+            "master": "qwen2.5-coder:7b",
+            "domain": "qwen2.5-coder:3b",
+            "worker": "qwen2.5-coder:3b",
+            "embedding": "nomic-embed-text",
+        }
+    elif available_vram_gb >= 3.0:
+        # 3-6GB: 3B for all tiers
         return {
             "master": "qwen2.5-coder:3b",
             "domain": "qwen2.5-coder:3b",
@@ -206,10 +221,10 @@ def select_models_for_vram(available_vram_gb: float) -> dict[str, str]:
             "embedding": "nomic-embed-text",
         }
     else:
-        # No GPU or very low VRAM — suggest cloud or CPU
+        # <3GB free: use smallest available
         return {
-            "master": "qwen2.5-coder:1.5b",
-            "domain": "qwen2.5-coder:1.5b",
-            "worker": "qwen2.5-coder:1.5b",
+            "master": "qwen2.5-coder:3b",
+            "domain": "qwen2.5-coder:3b",
+            "worker": "qwen2.5-coder:3b",
             "embedding": "nomic-embed-text",
         }

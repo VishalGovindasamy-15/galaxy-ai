@@ -25,7 +25,10 @@ async def run_setup() -> None:
         for gpu in status.gpus:
             console.print(f"  [green]✓[/green] {gpu.name} — {gpu.total_gb:.0f}GB total, {gpu.free_gb:.0f}GB free")
         models = select_models_for_vram(status.free_vram_gb)
-        console.print(f"  Recommended models: master={models['master']}, worker={models['worker']}")
+        console.print(f"  Recommended models:")
+        console.print(f"    master = [bold]{models['master']}[/bold]")
+        console.print(f"    domain = [bold]{models['domain']}[/bold]")
+        console.print(f"    worker = [bold]{models['worker']}[/bold]")
     else:
         console.print("  [yellow]⚠ No NVIDIA GPU detected — will use CPU or cloud models[/yellow]")
 

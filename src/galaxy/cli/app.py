@@ -52,13 +52,11 @@ def run(
     workspace: str = typer.Option(".", "--workspace", "-w", help="Workspace directory"),
 ) -> None:
     """Run Galaxy with a project request."""
+    from galaxy.cli.runner import GalaxyRunner
+
     async def _run() -> None:
-        kernel = GalaxyKernel()
-        await kernel.boot(workspace=Path(workspace))
-        console.print(f"[bold cyan]Galaxy AI[/bold cyan] — Building: {request}")
-        # Full orchestration happens here in later integration
-        console.print("[yellow]⚡ Orchestration engine starting...[/yellow]")
-        await kernel.shutdown()
+        runner = GalaxyRunner(workspace=Path(workspace).resolve())
+        await runner.run(request)
 
     asyncio.run(_run())
 
