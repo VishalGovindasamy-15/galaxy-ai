@@ -47,8 +47,8 @@ class ModelConfig(BaseModel):
     api_key_env: str = ""
     base_url: str = ""
     temperature: float = 0.1
-    max_tokens: int = 4096
-    timeout_seconds: int = 120
+    max_tokens: int = 8192
+    timeout_seconds: int = 300
 
     def resolve_api_key(self) -> str | None:
         """Resolve API key from environment variable name."""

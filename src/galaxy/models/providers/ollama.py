@@ -22,7 +22,7 @@ class OllamaProvider(BaseProvider):
 
     provider_name = "ollama"
 
-    def __init__(self, base_url: str = DEFAULT_OLLAMA_HOST, timeout: float = 120.0) -> None:
+    def __init__(self, base_url: str = DEFAULT_OLLAMA_HOST, timeout: float = 300.0) -> None:
         self.base_url = base_url.rstrip("/")
         self.timeout = timeout
 
@@ -54,7 +54,7 @@ class OllamaProvider(BaseProvider):
         temperature: float = 0.1,
         max_tokens: int = 4096,
         tools: list[dict[str, Any]] | None = None,
-        timeout: float = 120.0,
+        timeout: float = 300.0,
     ) -> ChatResponse:
         """Send chat completion to Ollama."""
         payload: dict[str, Any] = {

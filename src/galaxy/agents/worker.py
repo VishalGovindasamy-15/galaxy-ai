@@ -29,7 +29,12 @@ Rules:
 - Follow the project's coding style
 - If writing a test, ensure it's self-contained and uses pytest
 
-Output ONLY the file contents. No explanations, no markdown fences.
+CRITICAL OUTPUT RULES:
+- Output ONLY the raw file contents
+- Do NOT wrap code in ```python or ``` markdown fences
+- Do NOT add any explanations, comments about what the code does, or notes before/after
+- Start your response with the first line of code (e.g., import statement or docstring)
+- End your response with the last line of code
 """
 
 
@@ -129,17 +134,32 @@ class WorkerAgent(BaseAgent):
 
     @staticmethod
     def _extract_code(content: str) -> str:
-        """Extract code from LLM response, stripping markdown fences if present."""
+        """Extract code from LLM response, stripping markdown fences and explanations.
+
+        Handles common LLM output patterns:
+        - ```python\\ncode\\n```
+        - code with trailing ```
+        - Multiple code blocks (takes the largest)
+        - Explanatory text before/after code blocks
+        """
         content = content.strip()
 
-        # Remove markdown code fences
-        if content.startswith("```"):
+        # Strategy 1: Extract from markdown code blocks (```...```)
+        if "```" in content:
+            import re
+            # Find all code blocks
+            blocks = re.findall(r'```(?:\w+)?\n(.*?)```', content, re.DOTALL)
+            if blocks:
+                # Return the largest code block (most likely the actual code)
+                return max(blocks, key=len).strip()
+
+            # Fallback: just strip all ``` lines
             lines = content.split("\n")
-            # Find opening and closing fence
-            start = 1  # Skip first line (```python or ```)
-            end = len(lines) - 1
-            if lines[-1].strip() == "```":
-                end = len(lines) - 1
-            content = "\n".join(lines[start:end])
+            clean_lines = [
+                line for line in lines
+                if not line.strip().startswith("```")
+            ]
+            return "\n".join(clean_lines).strip()
 
         return content.strip()
+
