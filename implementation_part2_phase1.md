@@ -1065,6 +1065,403 @@ def main():
 
 ---
 
+## 12.1 Terminal UX Rendering Engine — `cli/renderer.py` + `cli/views/`
+
+> The terminal is the **primary user experience**. Built with Python's `rich` library.
+> Updates in-place at 500ms intervals. Never scrolls during normal operation.
+
+```python
+# cli/renderer.py — Core rendering engine
+from rich.console import Console
+from rich.live import Live
+from rich.panel import Panel
+from rich.table import Table
+from rich.tree import Tree
+from rich.progress import Progress, BarColumn, TextColumn
+from rich.spinner import Spinner
+from rich.layout import Layout
+import asyncio
+
+console = Console()
+
+class GalaxyRenderer:
+    """Master renderer that manages all terminal views."""
+
+    live: Live | None = None
+    current_view: str = "dashboard"     # dashboard | activity | taskgraph
+    verbosity: str = "normal"           # quiet | normal | verbose | debug
+
+    def __init__(self, event_bus: EventBus):
+        self.event_bus = event_bus
+        self.boot_renderer = BootRenderer()
+        self.dashboard = DashboardView()
+        self.activity = ActivityFeedView()
+        self.taskgraph = TaskGraphView()
+        self.status = StatusRenderer()
+        self.completion = CompletionReport()
+        self.escalation = EscalationRenderer()
+        self.keyboard = KeyboardController(self)
+
+    async def start(self) -> None:
+        """Start the live rendering loop. Called after boot completes."""
+        self.live = Live(console=console, refresh_per_second=2, screen=True)
+        self.live.start()
+        asyncio.create_task(self._render_loop())
+        asyncio.create_task(self.keyboard.listen())
+
+    async def _render_loop(self) -> None:
+        """Main render loop — updates every 500ms."""
+        while self.live:
+            match self.current_view:
+                case "dashboard":
+                    self.live.update(self.dashboard.render())
+                case "activity":
+                    self.live.update(self.activity.render())
+                case "taskgraph":
+                    self.live.update(self.taskgraph.render())
+            await asyncio.sleep(0.5)
+
+    def switch_view(self, view: str) -> None:
+        self.current_view = view
+
+    def cycle_verbosity(self) -> None:
+        cycle = ["quiet", "normal", "verbose", "debug"]
+        idx = (cycle.index(self.verbosity) + 1) % len(cycle)
+        self.verbosity = cycle[idx]
+
+    async def stop(self) -> None:
+        if self.live:
+            self.live.stop()
+            self.live = None
+```
+
+### Boot Renderer — `cli/views/boot.py`
+
+```python
+class BootRenderer:
+    """Renders the Galaxy boot sequence with ASCII art + step-by-step checks."""
+
+    GALAXY_LOGO = r'''
+ ██████   █████  ██       █████  ██   ██ ██    ██
+██       ██   ██ ██      ██   ██  ██ ██   ██  ██
+██   ███ ███████ ██      ███████   ███     ████
+██    ██ ██   ██ ██      ██   ██  ██ ██     ██
+ ██████  ██   ██ ███████ ██   ██ ██   ██    ██
+'''
+
+    async def render_boot(self, steps: list[BootStep]) -> None:
+        """Render each boot step with ✓/✗ status as it completes."""
+        console.print(f"[bold cyan]{self.GALAXY_LOGO}[/]")
+        console.print("  [bold cyan]AI Engineering Operating System[/]  v0.1.0\n")
+        console.print("  [bold]⚡ Booting Galaxy...[/]\n")
+
+        for step in steps:
+            with console.status(f"  [dim]{step.label}[/]"):
+                result = await step.execute()
+            icon = "[green]✓[/]" if result.success else "[red]✗[/]"
+            console.print(f"  {icon} {step.label:<30s} {result.detail}")
+
+    async def render_project_header(self, project: str, model: str, workspace: str) -> None:
+        """Render the project summary bar after boot."""
+        console.print()
+        console.rule(style="cyan")
+        console.print(f"  📋 Project: \"{project}\"")
+        console.print(f"  🤖 Master model: {model}")
+        console.print(f"  📁 Workspace: {workspace}")
+        console.rule(style="cyan")
+        console.print()
+```
+
+### Dashboard View — `cli/views/dashboard.py`
+
+```python
+class DashboardView:
+    """In-place live dashboard — the default runtime view."""
+
+    agents: list[AgentStatus] = []
+    recent_activity: list[ActivityEntry] = []
+    resources: ResourceSnapshot = ResourceSnapshot()
+    progress: tuple[int, int] = (0, 0)  # (completed, total)
+    elapsed: float = 0.0
+
+    def render(self) -> Panel:
+        """Build the full dashboard panel. Called every 500ms by renderer."""
+        layout = Layout()
+
+        # Progress bar
+        completed, total = self.progress
+        pct = int(completed / total * 100) if total > 0 else 0
+        filled = int(pct / 100 * 30)
+        bar = f"  PROGRESS [green]{'▓' * filled}[/][dim]{'░' * (30 - filled)}[/]  {pct}%  ({completed}/{total})"
+
+        # Agents table
+        agent_table = Table(show_header=False, box=None, padding=(0, 1))
+        for a in self.agents:
+            icon = {"master": "🧠", "domain": "📋", "worker": "⚙️"}[a.tier]
+            color = {"idle": "green", "working": "blue", "validating": "yellow",
+                     "retrying": "yellow", "failed": "red", "queued": "dim"}[a.status]
+            agent_table.add_row(
+                f"  {icon} {a.name:<18s}",
+                f"[{color}]{a.status:<12s}[/]",
+                f"{a.current_task}"
+            )
+
+        # Activity feed (last 5)
+        activity_lines = []
+        for entry in self.recent_activity[-5:]:
+            activity_lines.append(
+                f"  {entry.time}  {entry.icon} {entry.agent:<12s} {entry.file:<28s} {entry.result}"
+            )
+
+        # Resource bars
+        vram = self.resources.vram
+        ram = self.resources.ram
+        cpu = self.resources.cpu
+
+        content = "\n".join([
+            bar, "",
+            Panel.fit("\n".join(str(r) for r in agent_table.rows) or "  No agents", title="AGENTS").text,
+            Panel.fit("\n".join(activity_lines) or "  Waiting...", title="RECENT ACTIVITY").text,
+            Panel.fit(
+                f"  VRAM  {_bar(vram.used, vram.total)}  {vram.used:.1f}/{vram.total:.1f} GB\n"
+                f"  RAM   {_bar(ram.used, ram.total)}  {ram.used:.1f}/{ram.total:.1f} GB\n"
+                f"  CPU   {_bar(cpu.percent, 100)}  {cpu.percent:.0f}%",
+                title="RESOURCES"
+            ).text,
+            "",
+            "  [dim][p]ause  [s]tatus  [a]ctivity  [t]ask-graph  [l]og-level  [q]uit[/]"
+        ])
+
+        elapsed_str = _format_elapsed(self.elapsed)
+        return Panel(content, title=f"Galaxy ─── {self.project_name} ──── {elapsed_str}")
+
+def _bar(used: float, total: float, width: int = 20) -> str:
+    pct = used / total if total > 0 else 0
+    filled = int(pct * width)
+    color = "green" if pct < 0.8 else ("yellow" if pct < 0.95 else "red")
+    return f"[{color}]{'▓' * filled}[/][dim]{'░' * (width - filled)}[/]"
+```
+
+### Activity Feed — `cli/views/activity.py`
+
+```python
+class ActivityFeedView:
+    """Scrolling log mode — shows every event with timestamps."""
+
+    entries: list[ActivityEntry] = []
+    filter_agent: str | None = None
+    filter_domain: str | None = None
+
+    # Icon mapping
+    ICONS = {
+        "master": "🧠", "domain": "📋", "worker": "⚙️",
+        "writing": "✏️", "validating": "🔍", "passed": "✅",
+        "failed": "❌", "retrying": "🔄", "fixing": "🔧",
+        "escalating": "⬆️", "paused": "⏸️", "checkpoint": "💾",
+    }
+
+    def render(self) -> Panel:
+        lines = []
+        for e in self._filtered_entries()[-30:]:
+            icon = self.ICONS.get(e.action_type, "•")
+            line = f"  {e.timestamp}  {icon} {e.agent:<18s} {e.message}"
+            lines.append(line)
+            # Sub-steps (validation pipeline)
+            for sub in e.sub_steps:
+                result = "[green]✓[/]" if sub.passed else "[red]✗[/]"
+                lines.append(f"                     │  {result} {sub.name:<12s} {sub.detail}")
+        return Panel("\n".join(lines), title="Galaxy ─── Activity Feed ─── [d] dashboard  [f] filter")
+```
+
+### Task Graph View — `cli/views/taskgraph.py`
+
+```python
+class TaskGraphView:
+    """ASCII DAG of all tasks using Rich Tree."""
+
+    def render(self) -> Panel:
+        tree = Tree("🧠 Master Plan")
+        for domain in self.domains:
+            status_icon = self._status_icon(domain.status)
+            branch = tree.add(f"📋 {domain.name} {status_icon}")
+            for task in domain.tasks:
+                task_icon = self._status_icon(task.status)
+                branch.add(f"⚙️ {task.file} {task_icon}")
+        legend = "\n  Legend: ✅ done  🔵 running  🟡 validating  🟠 retrying  🔴 failed  ⚪ waiting"
+        content = str(tree) + legend
+        completed = sum(1 for d in self.domains for t in d.tasks if t.status == "done")
+        total = sum(len(d.tasks) for d in self.domains)
+        return Panel(content, title=f"Galaxy ─── Task Graph ─── {completed}/{total} complete")
+
+    @staticmethod
+    def _status_icon(status: str) -> str:
+        return {"done": "✅", "running": "🔵", "validating": "🟡",
+                "retrying": "🟠", "failed": "🔴", "waiting": "⚪", "queued": "⚪"}[status]
+```
+
+### Escalation Renderer — `cli/views/escalation.py`
+
+```python
+class EscalationRenderer:
+    """Renders escalation chain events clearly in the activity feed."""
+
+    LEVEL_LABELS = {
+        1: ("🔄", "Worker Retry"),
+        2: ("⬆️", "Domain Intervention"),
+        3: ("⬆️", "Master Intervention"),
+        4: ("⬆️", "Model Upgrade"),
+        5: ("⏸️", "User Escalation"),
+    }
+
+    def render_escalation(self, event: EscalationEvent) -> list[str]:
+        icon, label = self.LEVEL_LABELS[event.level]
+        lines = [f"                     │  {icon} ESCALATION LEVEL {event.level}: {label}"]
+        if event.detail:
+            lines.append(f"                     │  {event.detail}")
+        return lines
+
+    def render_user_prompt(self, event: EscalationEvent) -> Panel:
+        """Level 5: renders the interactive USER ACTION REQUIRED box."""
+        return Panel(
+            f"  Task: {event.task_description}\n"
+            f"  File: {event.file}\n"
+            f"  Error: {event.error}\n\n"
+            f"  {event.attempts} attempts failed\n\n"
+            f"  Options:\n"
+            f"    [h] Provide hint / additional context\n"
+            f"    [s] Skip this task\n"
+            f"    [m] Modify the task description\n"
+            f"    [f] Fix manually and mark complete\n"
+            f"    [r] Retry with different approach",
+            title="USER ACTION REQUIRED",
+            border_style="red",
+        )
+```
+
+### Completion Report — `cli/views/completion.py`
+
+```python
+class CompletionReport:
+    """Renders the final build report when galaxy run completes."""
+
+    def render(self, result: ProjectResult) -> None:
+        status = "✅ Galaxy — BUILD COMPLETE" if result.all_passed else "⚠️  Galaxy — BUILD COMPLETE WITH WARNINGS"
+        console.rule(f"[bold]{status}[/]", style="green" if result.all_passed else "yellow")
+
+        # Files created
+        console.print(Panel(
+            f"  {result.source_files} source files\n"
+            f"  {result.test_files} test files\n"
+            f"  {result.config_files} config files\n"
+            f"  ── ──────────────────\n"
+            f"  {result.total_files} files total    {result.total_lines:,} lines of code",
+            title="Files Created"
+        ))
+
+        # Quality
+        console.print(Panel(
+            f"  Tests:    {result.tests_passing}/{result.tests_total} passing  ({result.test_pct}%)\n"
+            f"  Coverage: {result.coverage}%\n"
+            f"  Lint:     {result.lint_warnings} warnings\n"
+            f"  Trust:    avg {result.avg_trust} ({result.trust_band})",
+            title="Quality"
+        ))
+
+        # Resources
+        console.print(Panel(
+            f"  Tokens:      {result.input_tokens:,} (in) + {result.output_tokens:,} (out)\n"
+            f"  Models:      {result.models_used}\n"
+            f"  Cost:        ${result.cost:.2f}\n"
+            f"  Retries:     {result.retries}\n"
+            f"  Escalations: {result.escalations}",
+            title="Resources Used"
+        ))
+
+        # Next steps
+        if result.next_steps:
+            console.print(Panel("\n".join(f"  {s}" for s in result.next_steps), title="Next Steps"))
+```
+
+### Keyboard Controller — `cli/keyboard.py`
+
+```python
+class KeyboardController:
+    """Handles keyboard input during execution. Non-blocking key listener."""
+
+    KEY_MAP = {
+        "d": ("dashboard", "Switch to dashboard"),
+        "a": ("activity", "Switch to activity feed"),
+        "t": ("taskgraph", "Show task graph"),
+        "s": ("status", "Quick status snapshot"),
+        "p": ("pause", "Graceful pause + checkpoint"),
+        "r": ("resume", "Resume from pause"),
+        "c": ("checkpoint", "Create manual checkpoint"),
+        "l": ("log_level", "Cycle verbosity"),
+        "w": ("workers", "Worker detail panel"),
+        "m": ("memory", "Memory usage stats"),
+        "v": ("vram", "GPU/VRAM detail panel"),
+        "f": ("filter", "Filter activity by agent"),
+        "q": ("quit", "Graceful shutdown"),
+    }
+
+    async def listen(self) -> None:
+        """Non-blocking keyboard listener using asyncio."""
+        import sys, tty, termios
+        fd = sys.stdin.fileno()
+        old_settings = termios.tcgetattr(fd)
+        try:
+            tty.setraw(fd)
+            while True:
+                key = await asyncio.get_event_loop().run_in_executor(None, sys.stdin.read, 1)
+                await self._handle_key(key)
+        finally:
+            termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
+
+    async def _handle_key(self, key: str) -> None:
+        if key in ("d", "a", "t"):
+            self.renderer.switch_view(self.KEY_MAP[key][0])
+        elif key == "l":
+            self.renderer.cycle_verbosity()
+        elif key == "p":
+            await self.renderer.event_bus.publish(Event("galaxy.pause_requested"))
+        elif key == "q":
+            await self.renderer.event_bus.publish(Event("galaxy.quit_requested"))
+        elif key == "c":
+            await self.renderer.event_bus.publish(Event("galaxy.checkpoint_requested"))
+```
+
+### Color System — `cli/colors.py`
+
+```python
+# cli/colors.py — Centralized color constants for all terminal output
+class GalaxyColors:
+    """Design language constants for Rich markup."""
+    BRAND = "bold cyan"
+    SUCCESS = "green"
+    ERROR = "red"
+    WARNING = "yellow"
+    RUNNING = "blue"
+    QUEUED = "dim"
+    ESCALATION = "magenta"
+    FILE_PATH = "cyan"
+    AGENT_NAME = "bold"
+    TRUST_HIGH = "green"
+    TRUST_MEDIUM = "yellow"
+    TRUST_LOW = "red"
+    PROGRESS_FILL = "green"
+    PROGRESS_EMPTY = "dim"
+    PANEL_BORDER = "bright_black"
+
+# Convenience functions
+def success(text: str) -> str: return f"[{GalaxyColors.SUCCESS}]✓ {text}[/]"
+def error(text: str) -> str:   return f"[{GalaxyColors.ERROR}]✗ {text}[/]"
+def warning(text: str) -> str: return f"[{GalaxyColors.WARNING}]⚠ {text}[/]"
+def filepath(path: str) -> str: return f"[{GalaxyColors.FILE_PATH}]{path}[/]"
+def agent(name: str) -> str:   return f"[{GalaxyColors.AGENT_NAME}]{name}[/]"
+```
+
+---
+
 ## 13. Phase 1 Build Order (Test-As-You-Build)
 
 > **RULE: Every file gets a test BEFORE moving to the next file.**
@@ -1590,3 +1987,7 @@ validation:
 
 **Next: Part 3 — Phase 2 Implementation (Memory, Cortex, Full Vault)**
 
+> [!NOTE]
+> **New subsystems introduced later:**
+> - **Phase 3:** Galaxy Scribe (Documentation Generation) — auto-generates docs alongside code
+> - **Phase 5-6:** Galaxy Compass (Strategic Intent Layer) — priorities, constraints, tradeoffs shape every agent decision

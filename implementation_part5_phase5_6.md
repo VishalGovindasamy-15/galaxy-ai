@@ -326,16 +326,29 @@ Week 3-4: Blueprints
   ├── CLI: galaxy init --blueprint, galaxy blueprint search
   └── tests
 
-Week 5-6: Cluster + Vault Extensions
+Week 5-6: Cluster + Vault Extensions + Compass (Strategic Intent)
   ├── cluster/topology.py, communication.py, gpu_manager.py
   ├── vault/hibernate.py (project hibernation)
   ├── vault/export.py (cross-hardware .vault export/import)
-  └── tests
+  ├── compass/engine.py        — CompassEngine (intent processing)
+  ├── compass/intent.py        — Intent data models + .galaxy/intent.yaml
+  ├── compass/advisor.py       — StrategyAdvisor (per-subsystem guidance)
+  ├── compass/alignment.py     — AlignmentChecker (output scoring vs intent)
+  ├── compass/evolution.py     — IntentEvolution (adapt over time)
+  ├── Wire Compass → Orchestrator (architecture shaped by priorities)
+  ├── Wire Compass → Model Router (model selection by budget intent)
+  ├── Wire Compass → Workers (intent preamble in every prompt)
+  ├── Wire Compass → Trust (5th dimension: intent alignment)
+  ├── Wire Compass → Governance (auto-activate policies from intent)
+  ├── Wire Compass → Scribe (doc depth from intent preferences)
+  └── tests (intent loading, alignment scoring, conflict detection)
 
 Week 7-8: Studio Dashboard
   ├── studio/server.py (FastAPI)
   ├── studio/websocket.py (real-time events)
   ├── studio/api/*.py (all REST endpoints)
+  ├── Studio Intent Dashboard view
+  ├── Studio Documentation browser (Scribe output)
   ├── Studio frontend (React/Vite — separate build)
   └── Integration tests
 ```
@@ -385,6 +398,22 @@ class SkillManager:
         """Find matching skill for new task."""
     async def apply_skill(self, skill: Skill, task: Task) -> TaskResult:
         """Apply saved skill pattern to new task."""
+
+# 7. Compass gains full autonomy:
+class AutonomousCompass:
+    async def auto_evolve_intent(self, project_state: ProjectState) -> IntentUpdate:
+        """Automatically adapt intent as project evolves."""
+    async def cross_project_intent_learning(self, projects: list[str]) -> IntentPatterns:
+        """Learn intent patterns across multiple projects."""
+    async def predict_intent_conflicts(self, intent: ProjectIntent) -> list[Conflict]:
+        """Proactively detect intent contradictions before they cause issues."""
+
+# 8. Scribe gains autonomous doc maintenance:
+class AutonomousScribe:
+    async def scheduled_drift_repair(self) -> list[DocUpdate]:
+        """Periodically scan for doc drift, auto-repair."""
+    async def cross_reference_audit(self) -> DocHealthReport:
+        """Verify all cross-references, links, imports in docs are valid."""
 ```
 
 ---
@@ -493,16 +522,18 @@ galaxy:
 
 ## COMPLETE FILE COUNT SUMMARY
 
-| Phase | New Files | Cumulative |
-|-------|----------|------------|
-| 1 | ~55 files | 55 |
-| 2 | ~25 files | 80 |
-| 3 | ~20 files | 100 |
-| 4 | ~25 files | 125 |
-| 5 | ~35 files | 160 |
-| 6 | ~15 files | 175 |
+| Phase | New Files | Key Additions | Cumulative |
+|-------|----------|---------------|------------|
+| 1 | ~55 files | Core, Orchestrator, Terminal, Tools, Studio, Forge | 55 |
+| 2 | ~25 files | Memory, Cortex, Vault | 80 |
+| 3 | ~30 files | Sentinel, Governance, Trust, **Scribe (10 files)** | 110 |
+| 4 | ~25 files | Sync, Forge Labs, Refiner, Distiller, Ledger | 135 |
+| 5 | ~45 files | Plugins, Blueprints, Cluster, Studio advanced, **Compass (6 files)** | 180 |
+| 6 | ~20 files | Autonomous extensions for Refiner, Compass, Scribe | 200 |
 
-**Total: ~175 Python source files + tests + configs + templates**
+**Total: ~200 Python source files + tests + configs + templates**
+
+**27 Subsystems including Galaxy Scribe (docs) and Galaxy Compass (intent)**
 
 **Repository: https://github.com/VishalGovindasamy-15/galaxy-ai**
 
@@ -529,10 +560,15 @@ Key test scenarios:
 8. Policy enforcement (blocked action = actually blocked)
 9. Escalation chain (Worker → Domain → Master → Fallback)
 10. Unified startup (CLI + Studio start together)
+11. Scribe doc generation (file created → docs auto-generated)
+12. Scribe drift detection (code changed → stale docs detected + repaired)
+13. Compass intent alignment (security intent → blocks insecure code)
+14. Compass model routing (budget: minimal → all-local models selected)
+15. Compass intent evolution (project grows → intent update suggested)
 ```
 
 ---
 
 **This completes the Galaxy Implementation Guide (Parts 1–5).**
-All 25 subsystems are covered with exact file paths, class definitions, method signatures, data models, and build order.
+All 27 subsystems are covered with exact file paths, class definitions, method signatures, data models, and build order.
 **Repository: https://github.com/VishalGovindasamy-15/galaxy-ai**

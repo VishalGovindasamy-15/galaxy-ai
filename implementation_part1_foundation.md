@@ -83,7 +83,18 @@ galaxy-ai/
 │       │   │   ├── plugin_cmd.py     # galaxy plugin install/list/remove
 │       │   │   └── blueprint_cmd.py  # galaxy blueprint search/install
 │       │   ├── setup_helper.py       # Auto-detect hardware, install tmux/Ollama
-│       │   └── formatters.py         # Rich console output formatting
+│       │   ├── formatters.py         # Rich console output formatting
+│       │   ├── renderer.py           # GalaxyRenderer — master rendering engine
+│       │   ├── colors.py             # GalaxyColors — design language constants
+│       │   ├── keyboard.py           # KeyboardController — hotkey listener
+│       │   └── views/                # Terminal UX views (Rich rendering)
+│       │       ├── boot.py           # BootRenderer — ASCII logo + boot steps
+│       │       ├── dashboard.py      # DashboardView — in-place live dashboard
+│       │       ├── activity.py       # ActivityFeedView — scrolling event log
+│       │       ├── taskgraph.py      # TaskGraphView — ASCII DAG tree
+│       │       ├── escalation.py     # EscalationRenderer — escalation chain display
+│       │       ├── completion.py     # CompletionReport — final build summary
+│       │       └── status.py         # StatusRenderer — galaxy status snapshot
 │       │
 │       ├── core/                     # Galaxy Core (The Kernel)
 │       │   ├── __init__.py
@@ -300,6 +311,27 @@ galaxy-ai/
 │       │       ├── realtime_app.yaml
 │       │       ├── cli_tool.yaml
 │       │       └── mobile_backend.yaml
+│       │
+│       ├── scribe/                  # Documentation Generation (Phase 3)
+│       │   ├── __init__.py
+│       │   ├── engine.py             # ScribeEngine — auto-doc daemon
+│       │   ├── sync.py               # Doc drift detection + repair
+│       │   └── generators/
+│       │       ├── readme.py          # README.md generator
+│       │       ├── api_doc.py         # OpenAPI + Markdown API reference
+│       │       ├── architecture.py    # Architecture doc with diagrams
+│       │       ├── module_doc.py      # Per-module documentation
+│       │       ├── changelog.py       # CHANGELOG.md generator
+│       │       ├── diagram.py         # Mermaid diagram generator (via Cortex)
+│       │       └── docstring.py       # Inline docstring generator
+│       │
+│       ├── compass/                  # Strategic Intent Layer (Phase 5-6)
+│       │   ├── __init__.py
+│       │   ├── engine.py             # CompassEngine — intent processing
+│       │   ├── intent.py             # Intent data models
+│       │   ├── advisor.py            # StrategyAdvisor — per-subsystem guidance
+│       │   ├── alignment.py          # AlignmentChecker — output scoring
+│       │   └── evolution.py          # IntentEvolution — adapt over time
 │       │
 │       ├── cluster/                  # Distributed Execution (Phase 5)
 │       │   ├── __init__.py
@@ -532,9 +564,9 @@ Layer 0 (Zero deps):     core, events, types
 Layer 1 (Core only):     tools, models, terminal, vault(basic)
 Layer 2 (Layer 0+1):     agents, orchestrator
 Layer 3 (Layer 0-2):     memory, cortex
-Layer 4 (Layer 0-3):     sentinel, governance, trust, forge
+Layer 4 (Layer 0-3):     sentinel, governance, trust, forge, scribe
 Layer 5 (Layer 0-4):     sync, refiner, distiller, ledger
-Layer 6 (Layer 0-5):     plugins, blueprints, cluster, studio
+Layer 6 (Layer 0-5):     plugins, blueprints, cluster, studio, compass
 Layer 7 (Everything):    cli (ties it all together)
 ```
 

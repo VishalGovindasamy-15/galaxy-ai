@@ -370,6 +370,8 @@ Week 5-6: Full Vault
 Week 7-8: Integration
   ├── Memory → Agent integration (context assembly)
   ├── Cortex → Orchestrator integration (dependency-aware planning)
+  ├── Cortex → Scribe integration hooks (diagram data export for Phase 3)
+  ├── Memory → Compass integration hooks (intent stored as foundational memory)
   ├── Vault → Kernel integration (automatic checkpointing)
   ├── Full pipeline test with memory persistence
   ├── Crash recovery end-to-end test
@@ -378,4 +380,11 @@ Week 7-8: Integration
 
 ---
 
-**Next: Part 4 — Phase 3 (Sentinel, Governance, Trust) + Phase 4 (Sync, Refiner, Distiller, Ledger)**
+> [!NOTE]
+> **Subsystems built on top of Phase 2 foundations:**
+> - **Galaxy Scribe (Phase 3)** — Uses Cortex's code graph to auto-generate architecture diagrams, module docs, and API references. Memory stores doc style preferences.
+> - **Galaxy Compass (Phase 5-6)** — Intent declarations stored in Memory as foundational context. Cortex's code intelligence validates intent alignment (e.g., detects security-priority violations in code patterns).
+
+---
+
+**Next: Part 4 — Phase 3 (Sentinel, Governance, Trust, Scribe) + Phase 4 (Sync, Refiner, Distiller, Ledger)**

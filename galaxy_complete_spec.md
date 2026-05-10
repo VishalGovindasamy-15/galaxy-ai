@@ -565,6 +565,547 @@ galaxy run "Build an API"   # Starts CLI + web dashboard TOGETHER
 - `galaxy checkpoint` / `galaxy hibernate` / `galaxy wake`
 - `galaxy plugin` / `galaxy blueprint`
 
+---
+
+### 6.1.1 Terminal UX Specification (Primary User Experience)
+
+> The terminal is the **first thing users see** and where they spend **80% of their time**.
+> It must feel alive, informative, and premium — not a wall of scrolling logs.
+> Built with **Rich** (Python) for cross-platform rendering.
+
+---
+
+#### A. Boot Sequence — `galaxy run "Build a REST API with auth"`
+
+```
+ ██████   █████  ██       █████  ██   ██ ██    ██
+██       ██   ██ ██      ██   ██  ██ ██   ██  ██
+██   ███ ███████ ██      ███████   ███     ████
+██    ██ ██   ██ ██      ██   ██  ██ ██     ██
+ ██████  ██   ██ ███████ ██   ██ ██   ██    ██
+
+  AI Engineering Operating System  v0.1.0
+  ─────────────────────────────────────────
+
+  ⚡ Booting Galaxy...
+
+  ✓ Config loaded             galaxy.config.yaml
+  ✓ Event bus ready            in-memory
+  ✓ Database ready             SQLite (.galaxy/galaxy.db)
+  ✓ Tool registry              11 tools registered
+  ✓ Model router               Ollama: qwen2.5-coder:14b (master), 7b (worker)
+  ✓ VRAM detected              NVIDIA RTX 4090 — 24,564 MB available
+  ✓ Terminal manager           tmux server ready
+  ✓ Vault initialized          no crash marker found (clean start)
+  ✓ Scheduler ready            max 4 parallel workers (VRAM budget)
+  ✓ Orchestrator ready         task graph engine online
+  ✓ Studio started             http://localhost:8420 (browser opened)
+  ✓ Galaxy booted              1.2s
+
+  ──────────────────────────────────────────────────
+  📋 Project: "Build a REST API with auth"
+  🤖 Master model: qwen2.5-coder:14b (Ollama)
+  📁 Workspace: /home/user/my-api
+  ──────────────────────────────────────────────────
+```
+
+---
+
+#### B. Live Execution Dashboard — Main View
+
+This is the **primary runtime display**. It uses Rich Live rendering to update in-place (no scrolling during normal operation).
+
+```
+╭─── Galaxy ─── Build a REST API with auth ──── 00:04:32 ───╮
+│                                                            │
+│  PROGRESS ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░░░░░░░░░░░░  58%  (14/24)  │
+│                                                            │
+│  ┌─ AGENTS ──────────────────────────────────────────────┐ │
+│  │  🧠 Master         idle        planning complete       │ │
+│  │  📋 Backend Lead   working     reviewing worker output │ │
+│  │  📋 Auth Lead      idle        domain complete ✅      │ │
+│  │  ⚙️  worker-01     writing     src/routes/users.py     │ │
+│  │  ⚙️  worker-02     testing     tests/test_auth.py      │ │
+│  │  ⚙️  worker-03     validating  src/models/post.py      │ │
+│  │  ⚙️  worker-04     queued      waiting for worker slot │ │
+│  └───────────────────────────────────────────────────────┘ │
+│                                                            │
+│  ┌─ RECENT ACTIVITY ─────────────────────────────────────┐ │
+│  │  04:31  ✅ worker-01  src/models/user.py       passed  │ │
+│  │  04:30  ✅ worker-02  src/auth/jwt.py          passed  │ │
+│  │  04:28  🔄 worker-03  src/models/post.py     retry #1  │ │
+│  │  04:27  ✅ worker-01  src/config.py            passed  │ │
+│  │  04:25  ✅ worker-02  src/database.py          passed  │ │
+│  └───────────────────────────────────────────────────────┘ │
+│                                                            │
+│  ┌─ RESOURCES ───────────────────────────────────────────┐ │
+│  │  VRAM  ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░░░░  16.2/24.0 GB  (67%)   │ │
+│  │  RAM   ▓▓▓▓▓▓▓▓░░░░░░░░░░░░   8.1/32.0 GB  (25%)   │ │
+│  │  CPU   ▓▓▓▓▓▓▓▓▓▓░░░░░░░░░░        48%              │ │
+│  │  Models: qwen2.5:14b (12GB), qwen2.5:7b ×2 (4GB ea) │ │
+│  └───────────────────────────────────────────────────────┘ │
+│                                                            │
+│  [p]ause  [s]tatus  [d]etail  [t]ask-graph  [q]uit       │
+╰────────────────────────────────────────────────────────────╯
+```
+
+**Rendering Details:**
+- Updates every **500ms** via Rich `Live` context manager
+- Progress bar fills from left to right with smooth animation
+- Agent status badges use color: 🟢 idle, 🔵 working, 🟡 validating, 🟠 retrying, 🔴 failed, ⚪ queued
+- VRAM bar turns yellow at 80%, red at 95%
+- The view never scrolls — it's an in-place dashboard
+
+---
+
+#### C. Activity Feed — Scrolling Log Mode
+
+Press `d` (detail) to switch from dashboard to scrolling activity feed:
+
+```
+╭─── Galaxy ─── Activity Feed ─── [d] dashboard  [f] filter ───╮
+
+  04:32:01  🧠 Master         Architecture plan finalized (5 domains, 24 tasks)
+  04:32:03  📋 Backend Lead   Created. Assigned 8 tasks.
+  04:32:03  📋 Auth Lead      Created. Assigned 6 tasks.
+  04:32:04  📋 Database Lead  Created. Assigned 4 tasks.
+  04:32:05  ⚙️  worker-01     Spawned → src/config.py
+  04:32:05  ⚙️  worker-02     Spawned → src/database.py
+  04:32:06  ⚙️  worker-03     Spawned → src/auth/jwt.py
+  04:32:07  ⚙️  worker-01     ✏️  Writing src/config.py (42 lines)
+  04:32:08  ⚙️  worker-02     ✏️  Writing src/database.py (67 lines)
+  04:32:12  ⚙️  worker-01     🔍 Validating src/config.py
+  04:32:12                    │  ✓ Syntax     passed (0.1s)
+  04:32:12                    │  ✓ Imports    passed (0.2s)
+  04:32:13                    │  ✓ Types      passed (1.1s)
+  04:32:13                    │  ✓ Lint       passed (0.3s) — auto-fixed 2 issues
+  04:32:13                    │  ✓ Build      passed (0.4s)
+  04:32:14                    │  ✓ Tests      passed (1.2s) — 3/3 tests
+  04:32:14  ⚙️  worker-01     ✅ src/config.py COMPLETE (trust: 92 HIGH)
+  04:32:15  ⚙️  worker-01     → Next: src/models/user.py
+  04:32:18  ⚙️  worker-03     ❌ src/auth/jwt.py — import error: 'jose' not found
+  04:32:18                    │  🔧 Auto-fix: adding 'python-jose' to requirements.txt
+  04:32:19  ⚙️  worker-03     🔄 Retry #1 with fix context
+  04:32:24  ⚙️  worker-03     ✅ src/auth/jwt.py COMPLETE (trust: 87 HIGH)
+
+╰───────────────────────────────────────────────────────────────╯
+```
+
+**Log Line Format:**
+```
+  HH:MM:SS  [icon] [agent-name]  [action] [target] [result]
+```
+
+**Icons:**
+- 🧠 = Master Agent
+- 📋 = Domain Agent
+- ⚙️ = Worker Agent
+- ✏️ = Writing file
+- 🔍 = Validating
+- ✅ = Passed / Completed
+- ❌ = Failed
+- 🔄 = Retrying
+- 🔧 = Auto-fixing
+- ⬆️ = Escalating
+- ⏸️ = Paused
+- 💾 = Checkpoint created
+
+---
+
+#### D. Escalation Chain — Terminal Display
+
+When the escalation chain kicks in, the terminal shows each level clearly:
+
+```
+  04:38:12  ⚙️  worker-03     ❌ src/routes/posts.py — type error: missing return type
+  04:38:12                    │  🔄 ESCALATION LEVEL 1: Worker Retry
+  04:38:12                    │  Context: added error + stack trace to prompt
+  04:38:15  ⚙️  worker-03     ❌ Retry #2 failed — same type error persists
+  04:38:18  ⚙️  worker-03     ❌ Retry #3 failed — different approach, still fails
+  04:38:18                    │
+  04:38:18                    │  ⬆️ ESCALATION LEVEL 2: Domain Intervention
+  04:38:18                    │  📋 Backend Lead analyzing 3 worker attempts...
+  04:38:22  📋 Backend Lead   🔍 Root cause: worker missing Pydantic response model context
+  04:38:23  📋 Backend Lead   📝 Revised task: added schemas.py as context file
+  04:38:25  ⚙️  worker-03     ✅ src/routes/posts.py COMPLETE (trust: 78 MEDIUM)
+  04:38:25                    │  Resolved at Level 2 (Domain Intervention)
+```
+
+If it goes higher:
+
+```
+  04:41:05                    │  ⬆️ ESCALATION LEVEL 3: Master Intervention
+  04:41:05                    │  🧠 Master restructuring approach...
+  04:41:10  🧠 Master         ⚡ Decision: split into 2 smaller tasks
+  04:41:10                    │  → posts_crud.py (basic operations)
+  04:41:10                    │  → posts_advanced.py (search + pagination)
+  04:41:15  ⚙️  worker-03     ✅ posts_crud.py COMPLETE (trust: 91 HIGH)
+  04:41:18  ⚙️  worker-04     ✅ posts_advanced.py COMPLETE (trust: 85 HIGH)
+  04:41:18                    │  Resolved at Level 3 (Master Intervention)
+
+  04:45:00                    │  ⬆️ ESCALATION LEVEL 4: Model Upgrade
+  04:45:00                    │  Switching worker-03 from qwen2.5:7b → gpt-4o
+  04:45:08  ⚙️  worker-03     ✅ Resolved with stronger model (trust: 94 HIGH)
+
+  04:50:00                    │  ⬆️ ESCALATION LEVEL 5: User Escalation
+  04:50:00                    │  ⏸️  PAUSED — Needs your help
+  04:50:00                    │
+  04:50:00  ┌─ USER ACTION REQUIRED ────────────────────────────┐
+  04:50:00  │                                                    │
+  04:50:00  │  Task: Generate payment webhook handler            │
+  04:50:00  │  File: src/webhooks/stripe.py                      │
+  04:50:00  │  Error: Cannot determine Stripe API version        │
+  04:50:00  │                                                    │
+  04:50:00  │  5 attempts failed (Worker ×3, Domain, Master)     │
+  04:50:00  │                                                    │
+  04:50:00  │  Options:                                          │
+  04:50:00  │    [h] Provide hint / additional context            │
+  04:50:00  │    [s] Skip this task                               │
+  04:50:00  │    [m] Modify the task description                  │
+  04:50:00  │    [f] Fix manually and mark complete               │
+  04:50:00  │    [r] Retry with different approach                │
+  04:50:00  │                                                    │
+  04:50:00  └────────────────────────────────────────────────────┘
+```
+
+---
+
+#### E. Task Graph View — ASCII DAG
+
+Press `t` (task-graph) from main dashboard:
+
+```
+╭─── Galaxy ─── Task Graph ─── 14/24 complete ───╮
+│                                                  │
+│   🧠 Master Plan                                 │
+│   ├── 📋 Auth Domain ✅                          │
+│   │   ├── ⚙️ jwt.py ✅                           │
+│   │   ├── ⚙️ middleware.py ✅                     │
+│   │   ├── ⚙️ routes/login.py ✅                   │
+│   │   ├── ⚙️ routes/register.py ✅                │
+│   │   ├── ⚙️ tests/test_auth.py 🔵 running       │
+│   │   └── ⚙️ tests/test_jwt.py ✅                 │
+│   │                                              │
+│   ├── 📋 Backend Domain 🔵                       │
+│   │   ├── ⚙️ config.py ✅                         │
+│   │   ├── ⚙️ database.py ✅                       │
+│   │   ├── ⚙️ models/user.py ✅                    │
+│   │   ├── ⚙️ models/post.py 🟡 validating        │
+│   │   ├── ⚙️ routes/users.py 🔵 writing          │
+│   │   ├── ⚙️ routes/posts.py ⚪ queued            │
+│   │   └── ⚙️ schemas.py ⚪ blocked (needs models) │
+│   │                                              │
+│   ├── 📋 Database Domain ⚪                      │
+│   │   ├── ⚙️ migrations/001.py ⚪ waiting         │
+│   │   └── ⚙️ seed.py ⚪ waiting                   │
+│   │                                              │
+│   └── 📋 DevOps Domain ⚪                        │
+│       ├── ⚙️ Dockerfile ⚪ waiting                │
+│       ├── ⚙️ docker-compose.yml ⚪ waiting        │
+│       └── ⚙️ requirements.txt 🔵 auto-updating   │
+│                                                  │
+│  Legend: ✅ done  🔵 running  🟡 validating      │
+│          🟠 retrying  🔴 failed  ⚪ waiting       │
+│                                                  │
+│  [d] dashboard  [a] activity  [q] back            │
+╰──────────────────────────────────────────────────╯
+```
+
+---
+
+#### F. Status Command — `galaxy status`
+
+Quick snapshot (not a live view):
+
+```
+$ galaxy status
+
+  Galaxy Status — my-api
+  ─────────────────────────────
+
+  Status:    ● Running (00:12:45)
+  Progress:  ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░░░░░  75% (18/24 tasks)
+  Studio:    http://localhost:8420
+
+  Agents:
+    🧠 Master          idle         qwen2.5-coder:14b
+    📋 3 Domains       2 idle, 1 working
+    ⚙️  4 Workers       2 writing, 1 testing, 1 queued
+
+  Resources:
+    VRAM   16.2 / 24.0 GB  (67%)
+    Models qwen2.5:14b, qwen2.5:7b ×2
+
+  Recent:
+    ✅ 04:38  src/routes/users.py    trust: 91
+    ✅ 04:37  src/auth/middleware.py  trust: 88
+    🔄 04:36  src/routes/posts.py    retry #1
+
+  Checkpoints: 3 saved (last: 2 min ago)
+  Errors: 1 retry in progress, 0 escalations
+```
+
+---
+
+#### G. Setup Command — `galaxy setup`
+
+The first-time experience:
+
+```
+$ galaxy setup
+
+  ██████   █████  ██       █████  ██   ██ ██    ██
+ ██       ██   ██ ██      ██   ██  ██ ██   ██  ██
+ ██   ███ ███████ ██      ███████   ███     ████
+ ██    ██ ██   ██ ██      ██   ██  ██ ██     ██
+  ██████  ██   ██ ███████ ██   ██ ██   ██    ██
+
+  First-Time Setup
+  ─────────────────
+
+  Checking system requirements...
+
+  ✓ Python           3.12.3
+  ✓ Git              2.43.0
+  ✓ OS               Ubuntu 24.04 (x86_64)
+
+  Checking dependencies...
+
+  ✓ tmux             already installed (3.4)
+  ⠋ Ollama           not found — installing...
+    ↳ curl -fsSL https://ollama.ai/install.sh | sh
+  ✓ Ollama           installed (0.3.12)
+
+  Detecting hardware...
+
+  ✓ GPU              NVIDIA RTX 4090
+  ✓ VRAM             24,564 MB available
+  ✓ RAM              32 GB
+  ✓ CPU              AMD Ryzen 9 7950X (32 threads)
+
+  Selecting models for your hardware (24GB VRAM)...
+
+  ✓ Master model     qwen2.5-coder:14b  (best reasoning)
+  ✓ Domain model     qwen2.5-coder:14b  (strong planning)
+  ✓ Worker model     qwen2.5-coder:7b   (fast generation)
+  ✓ Embedding model  nomic-embed-text    (memory search)
+
+  Pulling models via Ollama...
+
+  ⠏ qwen2.5-coder:14b   ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░░░░░  78%  (6.2/8.0 GB)
+    qwen2.5-coder:7b     queued
+    nomic-embed-text      queued
+
+  ... (after pulling completes)
+
+  ✓ qwen2.5-coder:14b   pulled (8.0 GB)
+  ✓ qwen2.5-coder:7b    pulled (4.4 GB)
+  ✓ nomic-embed-text     pulled (274 MB)
+
+  Generating configuration...
+
+  ✓ Created galaxy.config.yaml
+
+  ───────────────────────────────────────────
+  ✅ Galaxy is ready!
+
+  Quick start:
+    mkdir my-project && cd my-project
+    galaxy run "Build a REST API with auth"
+
+  Your hardware profile:
+    24GB VRAM → up to 4 parallel workers
+    Estimated speed: ~3 files/minute
+  ───────────────────────────────────────────
+```
+
+---
+
+#### H. Completion Report — End of Execution
+
+When `galaxy run` finishes:
+
+```
+  ───────────────────────────────────────────────────────
+  ✅ Galaxy — BUILD COMPLETE
+  ───────────────────────────────────────────────────────
+
+  Project:   "Build a REST API with auth"
+  Duration:  18 minutes 42 seconds
+  Status:    All 24 tasks completed
+
+  ┌─ Files Created ─────────────────────────────────────┐
+  │  14 source files        (.py)                       │
+  │   8 test files          (.py)                       │
+  │   1 Dockerfile                                      │
+  │   1 docker-compose.yml                              │
+  │   1 requirements.txt                                │
+  │   1 .env.example                                    │
+  │  ── ──────────────────                              │
+  │  26 files total         1,847 lines of code         │
+  └─────────────────────────────────────────────────────┘
+
+  ┌─ Quality ───────────────────────────────────────────┐
+  │  Tests:      42/42 passing  (100%)                  │
+  │  Coverage:   87%                                    │
+  │  Lint:       0 warnings                             │
+  │  Types:      clean (mypy strict)                    │
+  │  Trust:      avg 89 (HIGH)                          │
+  └─────────────────────────────────────────────────────┘
+
+  ┌─ Resources Used ────────────────────────────────────┐
+  │  Tokens:     148,230 (input) + 52,100 (output)      │
+  │  Models:     qwen2.5:14b (master), :7b (workers)    │
+  │  Cost:       $0.00 (all local)                       │
+  │  Agents:     1 master, 4 domains, 12 workers         │
+  │  Retries:    3 (all resolved at Level 1)             │
+  │  Escalations: 0                                      │
+  └─────────────────────────────────────────────────────┘
+
+  ┌─ Next Steps ────────────────────────────────────────┐
+  │                                                      │
+  │  Run the project:                                    │
+  │    cd my-api && pip install -r requirements.txt      │
+  │    python -m uvicorn main:app --reload               │
+  │                                                      │
+  │  Run tests:                                          │
+  │    pytest tests/ -v                                  │
+  │                                                      │
+  │  Continue building:                                  │
+  │    galaxy run "Add pagination and search to posts"   │
+  │                                                      │
+  └─────────────────────────────────────────────────────┘
+
+  Checkpoint saved: chk_a7f3e2 (can resume with `galaxy resume`)
+  Studio dashboard: http://localhost:8420 (still running)
+```
+
+---
+
+#### I. Keyboard Controls — During Execution
+
+| Key | Action | Description |
+|-----|--------|-------------|
+| `d` | Dashboard | Switch to main dashboard view (default) |
+| `a` | Activity | Switch to scrolling activity feed |
+| `t` | Task Graph | Show ASCII DAG of all tasks |
+| `s` | Status | Quick status snapshot |
+| `p` | Pause | Graceful pause + checkpoint |
+| `r` | Resume | Resume from pause |
+| `c` | Checkpoint | Create manual checkpoint |
+| `l` | Log level | Cycle: normal → verbose → debug → normal |
+| `w` | Workers | Show detailed worker panel |
+| `m` | Memory | Show memory usage stats |
+| `v` | VRAM | Show detailed GPU/VRAM panel |
+| `f` | Filter | Filter activity by agent/domain |
+| `q` | Quit | Graceful shutdown (checkpoint + stop) |
+| `Ctrl+C` | Force quit | Emergency stop (checkpoint attempted) |
+
+---
+
+#### J. Pause / Resume Terminal Output
+
+```
+$ # User presses [p] during execution:
+
+  ⏸️  PAUSING...
+  ✓ Waiting for active workers to reach safe points...
+  ✓ worker-01  safe point reached (file committed)
+  ✓ worker-02  safe point reached (test completed)
+  ✓ worker-03  safe point reached (mid-validation, state saved)
+  ✓ Checkpoint created: chk_b4e1a9
+  ✓ Galaxy paused at 14/24 tasks (58%)
+
+  To resume:  galaxy resume
+  To resume with different model:  galaxy resume --worker-model deepseek-coder:7b
+
+$ galaxy resume
+
+  ⚡ Resuming from checkpoint chk_b4e1a9...
+
+  ✓ Checkpoint loaded         14/24 tasks, 58% complete
+  ✓ Task graph restored       10 remaining tasks
+  ✓ Models loaded             qwen2.5-coder:14b, :7b ×2
+  ✓ Terminal sessions          reattached (3 tmux sessions)
+  ✓ Studio restarted          http://localhost:8420
+  ✓ Resumed!
+
+  Continuing from task 15/24...
+```
+
+---
+
+#### K. Error Summary — When Things Go Wrong
+
+If Galaxy finishes with issues:
+
+```
+  ───────────────────────────────────────────────────────
+  ⚠️  Galaxy — BUILD COMPLETE WITH WARNINGS
+  ───────────────────────────────────────────────────────
+
+  22/24 tasks completed, 2 skipped by user
+
+  ┌─ Skipped Tasks ─────────────────────────────────────┐
+  │                                                      │
+  │  ❌ src/webhooks/stripe.py                           │
+  │     Reason: User skipped (Stripe API version unknown)│
+  │     Escalation: Level 5 (all 5 levels attempted)     │
+  │                                                      │
+  │  ❌ tests/test_webhooks.py                           │
+  │     Reason: Depends on stripe.py (skipped parent)    │
+  │                                                      │
+  └─────────────────────────────────────────────────────┘
+
+  To retry skipped tasks later:
+    galaxy run "Implement Stripe webhook handler" --context .galaxy/checkpoints/chk_latest
+```
+
+---
+
+#### L. Color System & Design Language
+
+| Element | Color | Rich Markup |
+|---------|-------|-------------|
+| Galaxy branding | Bright cyan | `[bold cyan]` |
+| Success / Passed | Green | `[green]✓[/green]` |
+| Error / Failed | Red | `[red]✗[/red]` |
+| Warning / Retry | Yellow | `[yellow]⚠[/yellow]` |
+| Running / Active | Blue | `[blue]●[/blue]` |
+| Queued / Waiting | Dim white | `[dim]○[/dim]` |
+| Escalation | Magenta | `[magenta]⬆[/magenta]` |
+| File paths | Cyan | `[cyan]src/auth/jwt.py[/cyan]` |
+| Agent names | Bold | `[bold]worker-01[/bold]` |
+| Trust HIGH | Green | `[green]92 HIGH[/green]` |
+| Trust MEDIUM | Yellow | `[yellow]72 MEDIUM[/yellow]` |
+| Trust LOW | Red | `[red]45 LOW[/red]` |
+| Progress bar full | Green gradient | `▓` blocks |
+| Progress bar empty | Dim | `░` blocks |
+| Panel borders | Bright black | `╭╮╰╯│─` |
+
+**Rich Components Used:**
+- `rich.live.Live` — in-place updating dashboard
+- `rich.panel.Panel` — bordered panels
+- `rich.table.Table` — tabular data
+- `rich.progress.Progress` — progress bars with ETA
+- `rich.tree.Tree` — task graph rendering
+- `rich.console.Console` — styled output
+- `rich.spinner.Spinner` — loading indicators
+- `rich.syntax.Syntax` — code previews (verbose mode)
+
+---
+
+#### M. Verbosity Levels
+
+Press `l` to cycle through during execution:
+
+| Level | Shows | Use Case |
+|-------|-------|----------|
+| **Normal** (default) | Dashboard + key events | Regular use |
+| **Verbose** | + every file write, every validation step | Debugging progress |
+| **Debug** | + raw LLM prompts/responses, event bus messages | Deep debugging |
+| **Quiet** | Progress bar only, no activity feed | Background use |
+
 ### 6.2 Web Dashboard (Phase 1 built-in — AI Engineering Control Center)
 
 > **Studio starts WITH Galaxy automatically — no separate install or command needed.**
@@ -1111,6 +1652,8 @@ Phase 6: Autonomous          → Galaxy EVOLVES (self-improving, self-healing)
 | Project setup | From scratch every time | Blueprint templates with proven patterns |
 | Cost awareness | None | Full Ledger with budget enforcement |
 | Self-improvement | None | Refiner + Distiller auto-optimization |
+| Documentation | Manual, afterthought | Galaxy Scribe — auto-generated, always in sync |
+| Strategic intent | None — treats all code the same | Galaxy Compass — priorities, constraints, tradeoffs shape every decision |
 
 ---
 
@@ -1120,7 +1663,7 @@ Phase 6: Autonomous          → Galaxy EVOLVES (self-improving, self-healing)
 GalaxyOS
  ├── Galaxy Core           — System kernel and lifecycle
  ├── Galaxy Runtime        — Agent execution engine
- ├── Galaxy Orchestrator   — Task graph + coordination
+ ├── Galaxy Orchestrator   — Task graph + coordination + escalation
  ├── Galaxy Memory         — Multi-level memory system
  ├── Galaxy Scheduler      — VRAM-aware resource manager
  ├── Galaxy Terminal       — Multi-terminal execution (tmux)
@@ -1139,7 +1682,11 @@ GalaxyOS
  ├── Galaxy Plugin SDK     — Plugin runtime isolation
  ├── Galaxy Distiller      — Knowledge compression
  ├── Galaxy Ledger         — Cost accounting system
- └── Galaxy Blueprints     — Workflow templates
+ ├── Galaxy Blueprints     — Workflow templates
+ ├── Galaxy Scribe         — Documentation generation (NEW)
+ ├── Galaxy Compass        — Strategic intent layer (NEW)
+ ├── Galaxy Escalation     — Hierarchical failure resolution
+ └── Galaxy Event Bus      — In-memory / Redis event system
 ```
 
 ---
@@ -6027,3 +6574,594 @@ blueprints:
 | **Dashboard** | Template selection UI during project initialization |
 | **Governance** | Blueprint can include default policies |
 | **Forge Labs** | Blueprint defines which decisions are experiment-worthy |
+
+---
+
+## 26. Documentation Generation Layer (Galaxy Scribe)
+
+> [!IMPORTANT]
+> Code without documentation is technical debt from day zero. Galaxy Scribe generates, maintains, and evolves documentation **automatically** as code is built — not as an afterthought.
+
+### 26.1 Core Philosophy
+
+```
+Traditional:   Write code → (maybe) write docs later → docs rot
+Galaxy Scribe: Write code → docs generated SIMULTANEOUSLY → docs evolve WITH code
+```
+
+Every file Galaxy generates gets **paired documentation** — just like every file gets a paired test.
+
+### 26.2 What Scribe Generates
+
+| Document Type | When Generated | Format |
+|--------------|----------------|--------|
+| **README.md** | Project start + updated per milestone | Markdown |
+| **API Reference** | After every route/endpoint created | OpenAPI 3.1 + Markdown |
+| **Architecture Doc** | After Master creates architecture plan | Markdown + Mermaid diagrams |
+| **Module Docs** | After each domain completes | Markdown per module |
+| **Inline Docstrings** | Every function/class/method generated | Language-native (Python docstrings, JSDoc, etc.) |
+| **Changelog** | After each session completes | CHANGELOG.md (Keep a Changelog format) |
+| **Setup Guide** | After DevOps domain completes | CONTRIBUTING.md / SETUP.md |
+| **Database Schema** | After DB domain completes | ERD diagram + migration notes |
+| **Environment Vars** | After config files created | .env.example with descriptions |
+| **Test Documentation** | After test suite generated | Test coverage report + test descriptions |
+
+### 26.3 Architecture
+
+```python
+# scribe/engine.py
+class ScribeEngine:
+    """Autonomous documentation generation daemon."""
+
+    generators: list[BaseDocGenerator]
+    style: DocStyle              # Learned from existing docs in project
+
+    async def on_file_created(self, file: FileEvent) -> list[DocUpdate]:
+        """Triggered after every file generation. Creates/updates relevant docs."""
+
+    async def on_milestone(self, milestone: str) -> DocUpdate:
+        """Triggered when a domain completes. Updates README, architecture."""
+
+    async def on_session_complete(self, session: SessionSummary) -> DocUpdate:
+        """Generates changelog entry, updates README status."""
+
+    async def learn_doc_style(self, project_path: str) -> DocStyle:
+        """Analyze existing docs to match tone, format, depth."""
+
+    async def generate_full_docs(self) -> DocBundle:
+        """Full doc regeneration (on demand or first run)."""
+
+# scribe/generators/
+class ReadmeGenerator:       # README.md with badges, install, usage, API summary
+class ApiDocGenerator:       # OpenAPI spec + human-readable API reference
+class ArchitectureGenerator: # Architecture overview with Mermaid diagrams
+class ModuleDocGenerator:    # Per-module documentation
+class ChangelogGenerator:    # Semantic changelog entries
+class DiagramGenerator:      # Mermaid/PlantUML diagrams from Cortex graph
+class DocstringGenerator:    # Inline documentation for every symbol
+
+# scribe/sync.py
+class DocSyncManager:
+    """Keeps docs in sync with code changes."""
+
+    async def detect_drift(self) -> list[DocDrift]:
+        """Compare docs against current code via Cortex. Find stale sections."""
+
+    async def repair_drift(self, drift: DocDrift) -> DocUpdate:
+        """Regenerate stale doc sections using current code context."""
+```
+
+### 26.4 Documentation Quality Gate
+
+Integrated into the Forge validation pipeline:
+
+```
+Step 7.5 (NEW): Documentation Check
+  ├── Has docstring?                    (every public function/class)
+  ├── Docstring matches signature?      (params, return type, exceptions)
+  ├── Module has module-level docstring? (every .py file)
+  ├── API route has OpenAPI description? (every endpoint)
+  ├── README mentions this module?      (after domain completes)
+  └── Score: 0-100 doc_coverage
+```
+
+### 26.5 Diagram Generation (via Cortex)
+
+Scribe uses Cortex's code intelligence to auto-generate:
+
+```
+From Cortex import graph  → Module dependency diagram
+From Cortex call graph    → Sequence diagrams (key flows)
+From Cortex symbol graph  → Class hierarchy diagrams
+From DB schema            → Entity-relationship diagrams
+From API routes           → API flow diagrams
+From task graph           → Architecture overview diagram
+```
+
+All diagrams rendered as **Mermaid** (embedded in Markdown, viewable in GitHub/Studio).
+
+### 26.6 Doc Style Learning
+
+```python
+@dataclass
+class DocStyle:
+    tone: str              # "formal" | "casual" | "technical" | "tutorial"
+    depth: str             # "minimal" | "standard" | "comprehensive"
+    format: str            # "numpy" | "google" | "sphinx" | "jsdoc"
+    includes_examples: bool
+    includes_edge_cases: bool
+    readme_structure: list[str]  # ["Overview", "Install", "Usage", "API", ...]
+```
+
+Scribe learns from existing project docs. New project? Uses blueprint defaults.
+
+### 26.7 Integration with Subsystems
+
+| Subsystem | Integration |
+|-----------|-------------|
+| **Forge** | Doc coverage as quality gate (configurable threshold) |
+| **Cortex** | Source data for diagrams and cross-references |
+| **Memory** | Architecture decisions documented from memory |
+| **Sentinel** | Docstring style consistency enforcement |
+| **Studio** | Documentation browser/editor in dashboard |
+| **Trust** | Doc quality contributes to trust score |
+| **Blueprints** | Blueprint defines doc templates and structure |
+
+### 26.8 Configuration
+
+```yaml
+scribe:
+  enabled: true
+  auto_generate: true           # Generate docs alongside code
+  
+  readme:
+    auto_update: true
+    include_badges: true
+    include_api_summary: true
+  
+  docstrings:
+    style: google               # google | numpy | sphinx | jsdoc
+    require_params: true
+    require_returns: true
+    require_examples: false     # Set true for library projects
+  
+  api_docs:
+    format: openapi             # openapi | markdown | both
+    output: docs/api-reference.md
+  
+  diagrams:
+    enabled: true
+    format: mermaid
+    auto_update: true
+  
+  changelog:
+    format: keepachangelog      # keepachangelog | conventional
+    auto_generate: true
+  
+  quality_gate:
+    min_doc_coverage: 70        # Percentage of public symbols with docs
+    block_on_failure: false     # true = block, false = warn
+```
+
+---
+
+## 27. Strategic Intent Layer (Galaxy Compass)
+
+> [!IMPORTANT]
+> This is the **most transformative** subsystem in Galaxy. Every other system processes **tasks**. Compass processes **intent** — the WHY behind what you're building. It transforms Galaxy from a task executor into a **strategic engineering partner**.
+
+### 27.1 The Problem
+
+Current AI coding tools understand:
+```
+"Create a user authentication system"  →  Task (WHAT to build)
+```
+
+They do NOT understand:
+```
+"We're a healthcare startup. Security is non-negotiable.
+ We have limited budget. We prefer open-source.
+ Maintainability matters more than cleverness.
+ We expect 10x user growth in 6 months."
+```
+
+This is **intent** — and it should shape EVERY decision Galaxy makes.
+
+### 27.2 What Intent Looks Like
+
+```yaml
+# .galaxy/intent.yaml — Project Intent Declaration
+
+intent:
+  # Business Context
+  business:
+    domain: "healthcare"
+    stage: "early-startup"
+    team_size: 3
+    expected_growth: "10x in 6 months"
+    compliance: ["HIPAA"]
+
+  # Priority Stack (ordered — first = highest priority)
+  priorities:
+    - security          # Non-negotiable in healthcare
+    - maintainability   # Small team needs readable code
+    - reliability       # Patient data can't be lost
+    - performance       # Important but not #1
+    - speed_of_delivery # Ship fast, but not at security cost
+
+  # Constraints
+  constraints:
+    budget: "minimal"           # Prefer local models, minimize cloud API
+    licensing: "open-source-only"  # No proprietary dependencies
+    infrastructure: "single-server" # No Kubernetes, simple deployment
+    team_skill: "mid-level"     # Code should be readable, not clever
+
+  # Tradeoffs (explicit decisions)
+  tradeoffs:
+    - prefer: "verbose but readable"
+      over: "concise but clever"
+    - prefer: "battle-tested libraries"
+      over: "cutting-edge frameworks"
+    - prefer: "explicit error handling"
+      over: "implicit exception propagation"
+    - prefer: "SQL with ORM"
+      over: "raw SQL"
+    - prefer: "REST"
+      over: "GraphQL"
+
+  # Technical Preferences
+  preferences:
+    architecture: "layered"     # Not microservices for a 3-person team
+    testing: "comprehensive"    # Healthcare = high test coverage
+    documentation: "thorough"   # Small team needs onboarding docs
+    error_handling: "defensive" # Every edge case handled
+```
+
+### 27.3 How Intent Shapes Every Decision
+
+```
+                        ┌─────────────┐
+                        │   COMPASS   │
+                        │   (Intent)  │
+                        └──────┬──────┘
+                               │
+          ┌────────────────────┼────────────────────┐
+          │                    │                    │
+          ▼                    ▼                    ▼
+   ┌─────────────┐    ┌──────────────┐    ┌──────────────┐
+   │ Orchestrator │    │   Sentinel   │    │  Model Router │
+   │ HOW to plan  │    │ WHAT to check│    │ WHICH model   │
+   └─────────────┘    └──────────────┘    └──────────────┘
+          │                    │                    │
+          ▼                    ▼                    ▼
+   ┌─────────────┐    ┌──────────────┐    ┌──────────────┐
+   │   Workers   │    │  Governance  │    │    Ledger    │
+   │ HOW to code  │    │ WHAT policies│    │ HOW to budget│
+   └─────────────┘    └──────────────┘    └──────────────┘
+```
+
+### 27.4 Intent-Driven Decisions (Examples)
+
+**Scenario: Intent says `security > performance`**
+
+| Decision Point | Without Intent | With Intent |
+|---------------|----------------|-------------|
+| Password hashing | bcrypt (fast default) | argon2id (most secure) |
+| JWT expiry | 24 hours | 15 minutes + refresh token |
+| Input validation | Basic type checks | Comprehensive + sanitization |
+| SQL queries | ORM defaults | Parameterized + SQL injection audit |
+| Error messages | Detailed (dev-friendly) | Generic (no info leakage) |
+| Logging | Debug level | Audit-level with PII masking |
+| Dependencies | Latest versions | Pinned + CVE-scanned |
+
+**Scenario: Intent says `budget: minimal`**
+
+| Decision Point | Without Intent | With Intent |
+|---------------|----------------|-------------|
+| Master model | GPT-4o (cloud, $$$) | qwen2.5-coder:14b (local, free) |
+| Worker model | Claude 3.5 | qwen2.5-coder:7b (local, free) |
+| Retry strategy | Unlimited retries | Max 3 retries, then escalate |
+| Parallel workers | Max possible | Conservative (fewer model loads) |
+| Cloud fallback | Automatic | Only after user approval |
+| Embedding model | OpenAI ada-002 | nomic-embed-text (local) |
+
+**Scenario: Intent says `team_skill: mid-level`**
+
+| Decision Point | Without Intent | With Intent |
+|---------------|----------------|-------------|
+| Code patterns | Advanced metaclasses | Simple classes, clear inheritance |
+| Type hints | Complex generics | Basic type annotations |
+| Architecture | Event sourcing | Simple MVC/layered |
+| Comments | Minimal | Explain WHY, not just WHAT |
+| Variable names | Short (`usr`, `cfg`) | Descriptive (`current_user`, `app_config`) |
+| Error handling | Custom exception hierarchies | Standard exceptions + clear messages |
+
+### 27.5 Architecture
+
+```python
+# compass/engine.py
+class CompassEngine:
+    """Strategic Intent Processing Engine.
+    Reads intent declaration, produces decision context for every subsystem."""
+
+    intent: ProjectIntent        # Parsed from .galaxy/intent.yaml
+    resolver: ConflictResolver   # Resolves priority conflicts
+    advisor: StrategyAdvisor     # Generates recommendations
+
+    async def load_intent(self, path: str) -> ProjectIntent:
+        """Load and validate intent declaration."""
+
+    async def get_context(self, decision: Decision) -> IntentContext:
+        """For any decision point, return relevant intent guidance."""
+
+    async def evaluate_alignment(self, output: AgentOutput) -> AlignmentScore:
+        """Score how well an agent's output aligns with declared intent."""
+
+    async def suggest_intent(self, project_path: str) -> ProjectIntent:
+        """Analyze existing project and suggest an intent declaration."""
+
+# compass/intent.py
+@dataclass
+class ProjectIntent:
+    priorities: list[str]          # Ordered priority stack
+    constraints: dict[str, str]    # Hard constraints
+    tradeoffs: list[Tradeoff]      # Explicit tradeoff decisions
+    preferences: dict[str, str]    # Technical preferences
+    business: BusinessContext      # Domain, stage, team, growth
+
+@dataclass
+class IntentContext:
+    """Injected into every agent prompt as strategic context."""
+    relevant_priorities: list[str]
+    applicable_constraints: list[str]
+    applicable_tradeoffs: list[Tradeoff]
+    code_style_guidance: str       # Natural language guidance for this specific task
+    risk_level: str                # How critical is this task given intent?
+
+# compass/advisor.py
+class StrategyAdvisor:
+    """Converts intent into actionable guidance per subsystem."""
+
+    async def advise_orchestrator(self, intent: ProjectIntent) -> OrchestratorGuidance:
+        """Architecture patterns, decomposition strategy, parallelism level."""
+
+    async def advise_model_router(self, intent: ProjectIntent) -> ModelGuidance:
+        """Which models to use given budget/quality priorities."""
+
+    async def advise_sentinel(self, intent: ProjectIntent) -> SentinelGuidance:
+        """Which rules to enforce strictly vs. leniently."""
+
+    async def advise_governance(self, intent: ProjectIntent) -> GovernanceGuidance:
+        """Which policies to activate, enforcement levels."""
+
+    async def advise_worker(self, intent: ProjectIntent, task: Task) -> WorkerGuidance:
+        """Code style, patterns, and approach for this specific task."""
+
+# compass/alignment.py
+class AlignmentChecker:
+    """Scores every output against declared intent."""
+
+    async def check(self, output: AgentOutput, intent: ProjectIntent) -> AlignmentScore:
+        """
+        Example checks:
+        - Intent says 'security > performance' but code uses eval() → misalignment
+        - Intent says 'open-source-only' but added proprietary dep → violation
+        - Intent says 'readable' but code uses nested comprehensions → warning
+        """
+
+@dataclass
+class AlignmentScore:
+    score: int                     # 0-100
+    violations: list[IntentViolation]
+    warnings: list[IntentWarning]
+    suggestions: list[str]
+```
+
+### 27.6 Intent in Agent Prompts
+
+Every agent prompt gets an **Intent Preamble** injected by Compass:
+
+```
+STRATEGIC CONTEXT (from project intent):
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Priority order: security > maintainability > reliability > performance
+Constraints: open-source only, single-server deployment, mid-level team
+Code style: verbose and readable over concise and clever
+Error handling: defensive — handle every edge case explicitly
+
+FOR THIS TASK:
+- This is an authentication module → CRITICAL security path
+- Use argon2id for password hashing (security priority)
+- Include input validation on every endpoint
+- Add comprehensive error handling with safe messages
+- Write clear docstrings (team_skill: mid-level)
+```
+
+### 27.7 Intent Evolution
+
+Intent isn't static — it evolves as the project grows:
+
+```python
+# compass/evolution.py
+class IntentEvolution:
+    """Tracks how intent changes over time and adapts."""
+
+    async def suggest_updates(self, project_state: ProjectState) -> list[IntentSuggestion]:
+        """
+        Based on project growth, suggest intent updates:
+        - Project grew to 50+ files → suggest 'documentation: comprehensive'
+        - Multiple security violations → suggest elevating security priority
+        - Cloud costs exceeding budget → suggest model downgrade
+        - Team grew from 3 to 10 → suggest 'architecture: modular'
+        """
+
+    async def detect_conflicts(self, intent: ProjectIntent) -> list[IntentConflict]:
+        """
+        Find contradictions:
+        - 'speed_of_delivery' #1 but 'testing: comprehensive' → time conflict
+        - 'budget: minimal' but 'master: gpt-4o' → cost conflict
+        """
+```
+
+### 27.8 Intent-Aware Trust Scoring
+
+Trust scoring gains a 5th dimension — **intent alignment**:
+
+```
+Trust Profile (with Compass):
+  1. generation_confidence:  85   (task clarity + context)
+  2. validation_quality:     92   (all checks passed)
+  3. risk_score:            30   (low blast radius)
+  4. stability_estimate:     88   (mature pattern)
+  5. intent_alignment:       95   (matches all declared priorities)  ← NEW
+  ─────────────────────────────
+  composite_trust:           90   (HIGH — auto-merge)
+```
+
+### 27.9 Studio — Intent Dashboard
+
+Galaxy Studio gets an **Intent View**:
+
+```
+┌─ Intent Dashboard ────────────────────────────────────┐
+│                                                        │
+│  Priority Stack:                                       │
+│    1. 🔒 Security            ████████████████ 95%     │
+│    2. 📖 Maintainability     ████████████████ 92%     │
+│    3. 🛡️ Reliability         ███████████████░ 88%     │
+│    4. ⚡ Performance          ██████████████░░ 85%     │
+│    5. 🚀 Speed of Delivery   █████████████░░░ 80%     │
+│                                                        │
+│  Active Constraints:                                   │
+│    ✓ Open-source only        3 deps checked, 0 issues │
+│    ✓ Budget: minimal         $0.00 cloud spend        │
+│    ✓ Single-server           no k8s references found  │
+│    ⚠ HIPAA compliance        2 warnings (PII logging) │
+│                                                        │
+│  Recent Alignment Checks:                              │
+│    ✅ auth/middleware.py      alignment: 95            │
+│    ✅ models/user.py          alignment: 92            │
+│    ⚠️  routes/admin.py        alignment: 68            │
+│       → Warning: no rate limiting (security priority)  │
+│                                                        │
+│  [Edit Intent] [View History] [Suggestions]            │
+└────────────────────────────────────────────────────────┘
+```
+
+### 27.10 `galaxy init` with Intent
+
+```
+$ galaxy init
+
+  What are you building? REST API for a healthcare platform
+
+  Let me understand your priorities...
+
+  ┌─ Intent Builder ─────────────────────────────────────┐
+  │                                                       │
+  │  Detected: Healthcare domain                          │
+  │  Suggested compliance: HIPAA                          │
+  │                                                       │
+  │  Rank your priorities (drag to reorder):              │
+  │    1. 🔒 Security             [▲] [▼]                │
+  │    2. 🛡️ Reliability           [▲] [▼]                │
+  │    3. 📖 Maintainability       [▲] [▼]                │
+  │    4. ⚡ Performance            [▲] [▼]                │
+  │    5. 🚀 Speed                  [▲] [▼]                │
+  │                                                       │
+  │  Budget: [minimal] [moderate] [unlimited]             │
+  │  Team size: [solo] [small 2-5] [medium 5-20] [large] │
+  │  Licensing: [any] [open-source only] [custom]         │
+  │                                                       │
+  │  [Generate Intent] [Skip — use defaults]              │
+  └───────────────────────────────────────────────────────┘
+```
+
+### 27.11 Integration with All Subsystems
+
+| Subsystem | How Compass Integrates |
+|-----------|----------------------|
+| **Orchestrator** | Architecture decisions shaped by intent priorities |
+| **Model Router** | Model selection based on budget + quality intent |
+| **Workers** | Every prompt includes intent preamble |
+| **Sentinel** | Enforcement strictness tuned by intent |
+| **Governance** | Auto-activate relevant policies (HIPAA, SOC2) |
+| **Trust** | 5th trust dimension: intent alignment |
+| **Forge** | Validation thresholds tuned by priorities |
+| **Ledger** | Budget enforcement from intent constraints |
+| **Scribe** | Doc depth from intent preferences |
+| **Memory** | Intent stored as foundational memory |
+| **Blueprints** | Intent auto-selects appropriate template |
+| **Escalation** | Escalation urgency based on task criticality from intent |
+
+### 27.12 Configuration
+
+```yaml
+compass:
+  enabled: true
+  intent_file: ".galaxy/intent.yaml"
+  
+  prompt_injection: true        # Inject intent context into agent prompts
+  alignment_scoring: true       # Score every output against intent
+  
+  auto_suggest: true            # Suggest intent updates over time
+  conflict_detection: true      # Warn on contradictory intents
+  
+  strictness: balanced          # strict | balanced | relaxed
+  
+  # Alignment thresholds
+  alignment:
+    block_below: 40             # Block outputs with alignment < 40
+    warn_below: 70              # Warn on alignment < 70
+    auto_merge_above: 85        # Auto-merge if alignment > 85
+```
+
+---
+
+## 28. Phase & Subsystem Master Index
+
+### Updated Phase Plan
+
+```
+Phase 1: Foundation + CLI + Studio     (Core, Orchestrator, Terminal, Tools, Studio, Escalation, Forge basic)
+Phase 2: Memory & Intelligence         (Memory, Cortex, Vault full)
+Phase 3: Quality & Governance          (Sentinel, Governance, Trust, Scribe)
+Phase 4: Collaboration & Scale         (Sync, Forge Labs, Refiner, Distiller, Ledger)
+Phase 5: Enterprise & Extensibility    (Plugins, Blueprints, Cluster, Compass basic)
+Phase 6: Autonomous Operations         (Compass full, Refiner autonomous, Distiller autonomous, Marketplace)
+```
+
+### All 27 Subsystems
+
+```
+ 1. Galaxy Core           — System kernel and lifecycle
+ 2. Galaxy Runtime        — Agent execution engine
+ 3. Galaxy Orchestrator   — Task graph + coordination + escalation
+ 4. Galaxy Scheduler      — VRAM-aware resource manager
+ 5. Galaxy Terminal       — Multi-terminal execution (tmux)
+ 6. Galaxy Tools          — Tool execution layer
+ 7. Galaxy Forge          — Validation + build pipeline
+ 8. Galaxy Studio         — Web dashboard / control center
+ 9. Galaxy Memory         — Multi-level memory system
+10. Galaxy Cortex         — Semantic code intelligence
+11. Galaxy Vault          — Persistence & recovery engine
+12. Galaxy Sentinel       — Consistency governance engine
+13. Galaxy Governance     — Formal policy engine
+14. Galaxy Trust          — Confidence & trust scoring
+15. Galaxy Scribe         — Documentation generation (NEW)
+16. Galaxy Sync           — Distributed transaction consistency
+17. Galaxy Forge Labs     — Experimental execution (A/B testing)
+18. Galaxy Refiner        — Autonomous optimization
+19. Galaxy Distiller      — Knowledge compression
+20. Galaxy Ledger         — Cost accounting system
+21. Galaxy Plugin SDK     — Plugin runtime isolation
+22. Galaxy Blueprints     — Workflow templates
+23. Galaxy Cluster        — Distributed multi-machine execution
+24. Galaxy Compass        — Strategic intent layer (NEW)
+25. Galaxy Workers        — Worker agent framework
+26. Galaxy Escalation     — Hierarchical failure resolution
+27. Galaxy Event Bus      — In-memory / Redis event system
+```
+
+**Repository: https://github.com/VishalGovindasamy-15/galaxy-ai**

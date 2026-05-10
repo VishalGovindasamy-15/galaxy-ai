@@ -385,12 +385,23 @@ Week 3-4: Governance + Trust
   ├── trust/automation.py        — Trust-driven decisions
   └── tests
 
-Week 5-6: Integration
+Week 5-6: Integration + Scribe (Documentation Generation)
   ├── Wire Sentinel into orchestrator (check every output)
   ├── Wire Governance into tool execution (check every action)
   ├── Wire Trust into merge decisions
   ├── Forge validator integration
-  └── Full pipeline tests with quality enforcement
+  ├── scribe/engine.py             — ScribeEngine (auto-doc daemon)
+  ├── scribe/sync.py               — DocSyncManager (drift detection)
+  ├── scribe/generators/readme.py  — README.md generator
+  ├── scribe/generators/api_doc.py — OpenAPI + Markdown API docs
+  ├── scribe/generators/architecture.py — Architecture docs + Mermaid diagrams
+  ├── scribe/generators/changelog.py    — CHANGELOG.md generator
+  ├── scribe/generators/docstring.py    — Inline docstring generator
+  ├── scribe/generators/diagram.py      — Mermaid diagrams via Cortex
+  ├── Wire Scribe → Cortex (diagram data from code graph)
+  ├── Wire Scribe → Forge (doc coverage as quality gate step 7.5)
+  ├── Wire Scribe → Sentinel (docstring style consistency)
+  └── Full pipeline tests with quality enforcement + doc generation
 ```
 
 ## Phase 4 Build Order (8 weeks)
@@ -435,4 +446,5 @@ Week 7-8: Integration
 
 ---
 
-**Next: Part 5 — Phase 5 & 6 (Plugins, Blueprints, Cluster, Studio, Autonomous)**
+**Next: Part 5 — Phase 5 & 6 (Plugins, Blueprints, Cluster, Studio, Compass, Autonomous)**
+
