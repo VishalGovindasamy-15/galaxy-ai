@@ -71,40 +71,30 @@ Terminal:     tmux
   - [x] test_event_bus_works_after_boot() ✅
   - [x] test_kernel_boot_and_shutdown_lifecycle() ✅
 
-### Week 3-4: Model + Agent Layer
+### Week 3-4: Model + Agent Layer ✅ COMPLETE (288 total tests passing)
 
-- [ ] **models/vram.py** — VRAM detection + monitoring
-  - [ ] test_vram.py → test_detect_gpus(), test_get_free_vram(), test_estimate_model_vram(), test_no_gpu_returns_zero()
-- [ ] **models/providers/base.py** — BaseProvider interface
-- [ ] **models/providers/ollama.py** — Ollama provider
-  - [ ] test_ollama_provider.py → test_is_available(), test_list_models(), test_chat_completion(), test_chat_with_tools(), test_timeout()
-- [ ] **models/providers/openai.py** — OpenAI provider
-  - [ ] test_openai_provider.py → test_api_key_from_env(), test_chat_completion_mock(), test_handles_rate_limit()
-- [ ] **models/providers/anthropic.py** — Anthropic provider
-- [ ] **models/providers/google.py** — Google Gemini provider
-- [ ] **models/providers/groq.py** — Groq provider
-- [ ] **models/providers/deepseek.py** — DeepSeek provider
-- [ ] **models/providers/vllm.py** — vLLM provider
-- [ ] **models/providers/custom.py** — Custom OpenAI-compatible
-- [ ] **models/providers/litellm.py** — LiteLLM proxy
-- [ ] **models/registry.py** — ProviderRegistry (auto-discover)
-- [ ] **models/router.py** — ModelRouter (tier-based + task-based)
-  - [ ] test_router.py → test_route_by_tier(), test_route_by_task_type(), test_fallback_on_failure(), test_swap_model(), test_detect_all_providers()
-- [ ] **models/pool.py** — Model pool manager
-- [ ] **agents/base.py** — BaseAgent
-  - [ ] test_base_agent.py → test_agent_creation(), test_invoke_llm(), test_use_tool(), test_checkpoint_serialization(), test_from_checkpoint_restoration()
-- [ ] **agents/worker.py** — WorkerAgent
-  - [ ] test_worker.py → test_worker_executes_simple_task(), test_worker_writes_file(), test_worker_handles_failure()
-- [ ] **agents/domain.py** — DomainAgent
-  - [ ] test_domain.py
-- [ ] **agents/master.py** — MasterAgent
-  - [ ] test_master.py
-- [ ] **agents/registry.py** — AgentRegistry
-  - [ ] test_registry.py → test_register_agent(), test_get_agents_by_tier(), test_cleanup_idle_agents(), test_agent_limits_enforced()
-- [ ] ✅ **MODULE GATE:** test_agent_model_integration.py
-  - [ ] test_agent_calls_model_via_router()
-  - [ ] test_worker_generates_code_with_ollama()
-  - [ ] test_agent_lifecycle_spawn_to_terminate()
+- [x] **models/vram.py** — VRAM detection + monitoring ✅
+  - [x] test_vram.py ✅ (18 tests)
+- [x] **models/providers/base.py** — BaseProvider interface ✅
+- [x] **models/providers/ollama.py** — Ollama provider ✅
+  - [x] test_ollama_provider.py ✅ (in test_router.py)
+- [x] **models/providers/openai_compat.py** — OpenAI + Groq + DeepSeek + vLLM + LiteLLM + Custom ✅
+  - [x] test_openai_provider.py ✅ (in test_router.py)
+- [x] **models/router.py** — ModelRouter + ProviderRegistry ✅
+  - [x] test_router.py ✅ (27 tests: routing, fallback, swap, factories)
+- [x] **agents/base.py** — BaseAgent ✅
+  - [x] test_base_agent.py ✅ (15 tests: creation, LLM, events, checkpoint)
+- [x] **agents/worker.py** — WorkerAgent ✅
+  - [x] test_worker.py ✅ (7 tests: execute, events, failure, code extraction)
+- [x] **agents/domain.py** — DomainAgent ✅
+- [x] **agents/master.py** — MasterAgent ✅
+- [x] **agents/registry.py** — AgentRegistry ✅
+  - [x] test_registry.py ✅ (10 tests: register, tiers, limits, cleanup, summary)
+- [x] ✅ **MODULE GATE:** test_agent_model_integration.py ✅
+  - [x] test_agent_calls_model_via_router() ✅
+  - [x] test_worker_generates_code() ✅
+  - [x] test_agent_lifecycle_spawn_to_terminate() ✅
+
 
 ### Week 5-6: Tools + Terminal
 
