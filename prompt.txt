@@ -1,0 +1,104 @@
+Viewed implementation_plan.md:2-50
+
+Great question — this is critical for a project this size. Here's exactly how continuity works:
+
+## The Continuity Strategy
+
+### Everything is already saved as files
+
+All the knowledge ANY model needs to build Galaxy is persisted in your repo:
+
+```
+/mnt/78CA356BCA352732/Galaxy/
+├── galaxy_complete_spec.md          ← 7,168 lines — FULL architecture (27 subsystems)
+├── implementation_part1_foundation.md  ← Directory structure + dependencies + build layers
+├── implementation_part2_phase1.md      ← Every class, method, test for Phase 1
+├── implementation_part3_phase2.md      ← Memory, Cortex, Vault implementation
+├── implementation_part4_phase3_4.md    ← Sentinel, Governance, Trust, Scribe, Sync, Refiner
+├── implementation_part5_phase5_6.md    ← Plugins, Blueprints, Compass, Studio, Autonomous
+└── implementation_plan.md              ← 209-task TODO checklist with progress tracking
+```
+
+### How to hand off to ANY model (new conversation, different AI, etc.)
+
+Use this **handoff prompt** — copy/paste it into any new session:
+
+---
+
+```
+I'm building Galaxy AI — an AI Engineering Operating System.
+Repository: https://github.com/VishalGovindasamy-15/galaxy-ai
+
+All specifications and implementation guides are IN the repo:
+
+1. Read `galaxy_complete_spec.md` — Complete architecture (27 subsystems, 7000+ lines)
+2. Read `implementation_plan.md` — TODO checklist (209 tasks, track [x] = done)
+3. Read the relevant `implementation_part{N}.md` for the phase you're working on:
+   - Part 1: Foundation (directory structure, build layers)
+   - Part 2: Phase 1 (Core, Events, Models, Agents, Tools, CLI, Terminal UX)
+   - Part 3: Phase 2 (Memory, Cortex, Vault)
+   - Part 4: Phase 3+4 (Sentinel, Governance, Trust, Scribe, Sync, Refiner, Distiller, Ledger)
+   - Part 5: Phase 5+6 (Plugins, Blueprints, Compass, Cluster, Studio, Autonomous)
+
+RULES:
+- Every file gets a paired test. No file is done without passing test.
+- Follow the exact class/method signatures in the implementation docs.
+- Check implementation_plan.md for what's already done ([x]) vs remaining ([ ]).
+- Update implementation_plan.md as you complete tasks.
+- Production grade code. Type hints. Docstrings. Error handling.
+
+Continue from where the last session left off. Check the TODO to see current progress.
+```
+
+---
+
+### Why this works with ANY model
+
+| What the model needs | Where it is |
+|---------------------|-------------|
+| Architecture decisions | `galaxy_complete_spec.md` |
+| Exact class signatures | `implementation_part2-5.md` |
+| Directory structure | `implementation_part1_foundation.md` |
+| What's done vs remaining | `implementation_plan.md` (checkboxes) |
+| How to test | Build order + test names in Part 2-5 |
+| Terminal UX design | Part 2 Section 12.1 + spec Section 6.1.1 |
+| Scribe & Compass specs | Spec Sections 26-27 |
+
+### Progress tracking (the key trick)
+
+As we build, I'll mark tasks as done in `implementation_plan.md`:
+
+```diff
+- [ ] **core/config.py** — Configuration loader
++ [x] **core/config.py** — Configuration loader ✅
+```
+
+Any new session just reads that file and sees exactly where to continue.
+
+### If I hit limits mid-file
+
+If I'm in the middle of generating a file and run out of tokens, you just say in the next session:
+
+```
+Continue building Galaxy AI. Read implementation_plan.md for progress.
+The last file being worked on was [filename]. Complete it and continue.
+```
+
+### Push to GitHub for extra safety
+
+We should also push to your repo periodically:
+
+```bash
+cd /mnt/78CA356BCA352732/Galaxy
+git add -A
+git commit -m "Phase 1 Week 1-2: Core Foundation complete"
+git push origin main
+```
+
+This way the code is on GitHub — any AI tool (Cursor, Copilot, another Antigravity session) can clone and continue.
+
+---
+
+**Bottom line:** The 6 documentation files ARE the brain. They contain every decision, every class signature, every test name. Any model that reads them has full context. The `implementation_plan.md` checkbox tracker tells them exactly where to pick up.
+
+Want me to start building now? 🚀
