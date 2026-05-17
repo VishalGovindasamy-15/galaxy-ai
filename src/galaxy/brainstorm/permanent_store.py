@@ -141,6 +141,10 @@ class PermanentIdeaStore:
             "dependencies": [],
             "security": [],
             "workflows": [],
+            "devops": [],
+            "testing": [],
+            "performance": [],
+            "other": [],
         }
 
         category_to_key = {
@@ -150,6 +154,12 @@ class PermanentIdeaStore:
             IdeaCategory.DEPENDENCY: "dependencies",
             IdeaCategory.SECURITY: "security",
             IdeaCategory.WORKFLOW: "workflows",
+            IdeaCategory.DEVOPS: "devops",
+            IdeaCategory.TESTING: "testing",
+            IdeaCategory.PERFORMANCE: "performance",
+            IdeaCategory.INTEGRATION: "other",
+            IdeaCategory.UI_UX: "features",
+            IdeaCategory.OTHER: "other",
         }
 
         for idea in self.list_by_priority():

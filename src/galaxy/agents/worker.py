@@ -2,6 +2,8 @@
 
 Workers are the lowest tier agents that directly write code, tests, and config files.
 They receive specific task assignments from Domain agents and execute them.
+
+Phase 2 upgrade: Can now generate CodeChunks from ExecutionContracts.
 """
 
 from __future__ import annotations
@@ -10,6 +12,7 @@ import logging
 from typing import Any
 
 from galaxy.agents.base import BaseAgent
+from galaxy.contracts.types import CodeChunk, ExecutionContract
 from galaxy.core.types import AgentStatus, AgentTier, Task, TaskStatus
 from galaxy.events.bus import EventBus
 from galaxy.models.providers import ChatMessage
@@ -39,7 +42,12 @@ CRITICAL OUTPUT RULES:
 
 
 class WorkerAgent(BaseAgent):
-    """Worker agent that generates individual files."""
+    """Worker agent that generates individual files.
+
+    Supports two modes:
+    - Legacy: execute_task() → generates full files from Tasks
+    - Contract: execute_contract() → generates CodeChunks from ExecutionContracts
+    """
 
     def __init__(
         self,
@@ -114,6 +122,81 @@ class WorkerAgent(BaseAgent):
 
             raise
 
+    async def execute_contract(
+        self,
+        contract: ExecutionContract,
+        context: str = "",
+    ) -> CodeChunk:
+        """Execute an ExecutionContract — generate a CodeChunk.
+
+        This is the Phase 2 contract-based approach. The worker
+        uses the contract's structured prompt to generate code,
+        then wraps it in a CodeChunk for the integrator.
+
+        Args:
+            contract: The execution contract specifying what to generate.
+            context: Additional project context.
+
+        Returns:
+            CodeChunk ready for the integrator.
+        """
+        self.status = AgentStatus.WORKING
+        self.current_task = f"Contract: {contract.function_name}"
+
+        await self.emit_event("worker.contract.started", {
+            "agent_id": self.id,
+            "contract_id": contract.id,
+            "target": f"{contract.target_file}::{contract.function_name}",
+        })
+
+        try:
+            # Use the contract's structured prompt
+            prompt = contract.to_worker_prompt()
+            if context:
+                prompt += f"\n\nProject context:\n{context}"
+
+            response = await self.invoke_llm(
+                system_prompt=WORKER_SYSTEM_PROMPT,
+                user_message=prompt,
+            )
+
+            code = self._extract_code(response.content)
+
+            chunk = CodeChunk(
+                contract_id=contract.id,
+                target_file=contract.target_file,
+                target_symbol=contract.function_name,
+                operation=contract.operation,
+                content=code,
+                dependencies=contract.dependencies,
+                worker_id=self.id,
+            )
+
+            self.tasks_completed += 1
+            self.status = AgentStatus.IDLE
+            self.current_task = ""
+
+            await self.emit_event("worker.contract.completed", {
+                "agent_id": self.id,
+                "contract_id": contract.id,
+                "chunk_lines": len(code.splitlines()),
+                "tokens": response.total_tokens,
+            })
+
+            return chunk
+
+        except Exception as e:
+            self.tasks_failed += 1
+            self.status = AgentStatus.FAILED
+
+            await self.emit_event("worker.contract.failed", {
+                "agent_id": self.id,
+                "contract_id": contract.id,
+                "error": str(e),
+            })
+
+            raise
+
     def _build_prompt(self, task: Task, context: str) -> str:
         """Build the prompt for code generation."""
         parts = [f"Generate the file: {task.file_path}"]
@@ -162,4 +245,5 @@ class WorkerAgent(BaseAgent):
             return "\n".join(clean_lines).strip()
 
         return content.strip()
+
 

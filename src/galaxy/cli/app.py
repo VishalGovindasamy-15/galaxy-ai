@@ -1,6 +1,6 @@
 """Galaxy CLI — main application entry point.
 
-Commands: setup, init, run, pause, resume, status, config
+Commands: setup, init, run, brainstorm, chat, config, pause, resume, status
 """
 
 from __future__ import annotations
@@ -62,6 +62,23 @@ def run(
 
 
 @app.command()
+def brainstorm(
+    prompt: str = typer.Argument("", help="What to build (optional, asked interactively)"),
+    workspace: str = typer.Option(".", "--workspace", "-w", help="Workspace directory"),
+    mode: str = typer.Option("structured", "--mode", "-m", help="Mode: free_form, structured, guided"),
+    project_name: str = typer.Option("", "--name", "-n", help="Project name"),
+) -> None:
+    """Start a brainstorming session to plan your project."""
+    from galaxy.cli.commands.brainstorm import brainstorm_command
+    brainstorm_command(
+        workspace=Path(workspace).resolve(),
+        prompt=prompt,
+        mode=mode,
+        project_name=project_name,
+    )
+
+
+@app.command()
 def status(workspace: str = typer.Option(".", "--workspace", "-w")) -> None:
     """Show current Galaxy status."""
     from galaxy.core.constants import get_galaxy_dir
@@ -79,6 +96,25 @@ def status(workspace: str = typer.Option(".", "--workspace", "-w")) -> None:
     crash_marker = galaxy_dir / ".galaxy_crash_marker"
     if crash_marker.exists():
         console.print("[yellow]⚠ Crash marker detected — run [bold]galaxy resume[/bold][/yellow]")
+
+
+@app.command()
+def chat(
+    model: str = typer.Option("", "--model", "-m", help="Override master model"),
+    mode: str = typer.Option("reasoning", "--mode", help="Pipeline mode: normal or reasoning"),
+) -> None:
+    """Chat interactively with the Galaxy master agent."""
+    from galaxy.cli.commands.chat import chat as chat_app
+    chat_app(model=model, mode=mode)
+
+
+@app.command()
+def config(
+    ctx: typer.Context,
+) -> None:
+    """Manage Galaxy configuration. Use 'galaxy config --help' for subcommands."""
+    from galaxy.cli.commands.config import app as config_app
+    config_app()
 
 
 @app.command()
