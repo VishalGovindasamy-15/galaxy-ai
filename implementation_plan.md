@@ -1,492 +1,411 @@
-# Galaxy AI — Complete Implementation Plan & TODO
+# Galaxy AI — Implementation Plan (v3)
 
-**Repository:** https://github.com/VishalGovindasamy-15/galaxy-ai
-**Total:** 27 subsystems · ~200 files · 6 phases · 15 test scenarios
+## Architectural Upgrades (v1 → v3)
 
----
-
-## Execution Strategy
-
-### How We Build
-```
-1. Every file gets a paired test BEFORE moving to the next file
-2. Every module passes integration test BEFORE next module
-3. Every phase passes E2E test BEFORE next phase
-4. Fail early → fix immediately → never accumulate debt
-```
-
-### Gate Rules
-```
-FILE GATE:    Write file → Write test → Test passes     → ✅ Next file
-MODULE GATE:  All files tested → Integration test passes → ✅ Next module
-PHASE GATE:   All modules tested → E2E test passes       → ✅ Next phase
-```
-
-### Tech Stack
-```
-Language:     Python 3.11+
-CLI:          Typer + Rich
-Web:          FastAPI + Vite (React)
-Database:     SQLite (default) / PostgreSQL (optional)
-Event Bus:    In-memory async (default) / Redis (optional)
-Models:       Ollama (local) + OpenAI/Anthropic/etc (cloud optional)
-Testing:      pytest + mypy + ruff
-Terminal:     tmux
-```
+| # | Upgrade | Impact |
+|---|---------|--------|
+| 1 | **Chunk-based workers** | Workers generate patches/snippets, not full files. New Integrator merges chunks |
+| 2 | **Structured contracts** | Domain agents output formal specs (signatures, params, types, constraints) |
+| 3 | **Cloud worker scaling** | Unlimited cloud agents with permission gates and cost estimates |
+| 4 | **Brainstorming engine** | Pre-execution cognitive layer: temp ideas ↔ permanent ideas with approval |
+| 5 | **Project source-of-truth** | `.galaxy/project.yaml` defines entire project state, portable and rebuildable |
+| 6 | **Cognitive pipeline** | Master uses: Expander → Planner → Retriever → Reflection → Synthesizer |
+| 7 | **Normal vs Reasoning modes** | Fast mode (cheap) vs Reasoning mode (deep cognitive pipeline) |
+| 8 | **Autonomous Audit System** | Engineering + Security + Production audit with remediation (standalone capable) |
 
 ---
 
-## PROJECT TODO — PHASE 1: Foundation (Weeks 1-10)
+## Revised Architecture
 
-> **Goal:** End-to-end Galaxy running: boot → plan → execute → validate → output
-
-### Week 1-2: Core Foundation ✅ COMPLETE (215 tests passing)
-
-- [x] **pyproject.toml** — Package config, dependencies, entry points ✅
-- [x] **README.md** — Project overview ✅
-- [x] **Makefile** — Dev commands (test, lint, build) ✅
-- [x] **.env.example** — Environment template ✅
-- [x] **src/galaxy/__init__.py** — Version, exports ✅
-- [x] **src/galaxy/__main__.py** — `python -m galaxy` ✅
-
----
-
-- [x] **core/constants.py** — System constants, defaults ✅
-  - [x] test_constants.py ✅ (27 tests)
-- [x] **core/exceptions.py** — All custom exceptions ✅
-  - [x] test_exceptions.py ✅ (42 tests)
-- [x] **core/types.py** — Shared type definitions (AgentTier, TaskStatus, etc.) ✅
-  - [x] test_types.py ✅ (71 tests)
-- [x] **core/config.py** — Configuration loader (YAML + env vars) ✅
-  - [x] test_config.py ✅ (18 tests)
-- [x] **core/version.py** — Version info ✅
-- [x] **events/events.py** — Event data models ✅
-  - [x] test_events.py ✅ (13 tests)
-- [x] **events/bus.py** — In-memory async EventBus ✅
-  - [x] test_bus.py ✅ (18 tests)
-- [x] **core/kernel.py** — GalaxyKernel (skeleton) ✅
-  - [x] test_kernel.py ✅ (12 tests)
-- [x] ✅ **MODULE GATE:** test_core_integration.py ✅
-  - [x] test_kernel_boots_with_default_config() ✅
-  - [x] test_event_bus_works_after_boot() ✅
-  - [x] test_kernel_boot_and_shutdown_lifecycle() ✅
-
-### Week 3-4: Model + Agent Layer ✅ COMPLETE (288 total tests passing)
-
-- [x] **models/vram.py** — VRAM detection + monitoring ✅
-  - [x] test_vram.py ✅ (18 tests)
-- [x] **models/providers/base.py** — BaseProvider interface ✅
-- [x] **models/providers/ollama.py** — Ollama provider ✅
-  - [x] test_ollama_provider.py ✅ (in test_router.py)
-- [x] **models/providers/openai_compat.py** — OpenAI + Groq + DeepSeek + vLLM + LiteLLM + Custom ✅
-  - [x] test_openai_provider.py ✅ (in test_router.py)
-- [x] **models/router.py** — ModelRouter + ProviderRegistry ✅
-  - [x] test_router.py ✅ (27 tests: routing, fallback, swap, factories)
-- [x] **agents/base.py** — BaseAgent ✅
-  - [x] test_base_agent.py ✅ (15 tests: creation, LLM, events, checkpoint)
-- [x] **agents/worker.py** — WorkerAgent ✅
-  - [x] test_worker.py ✅ (7 tests: execute, events, failure, code extraction)
-- [x] **agents/domain.py** — DomainAgent ✅
-- [x] **agents/master.py** — MasterAgent ✅
-- [x] **agents/registry.py** — AgentRegistry ✅
-  - [x] test_registry.py ✅ (10 tests: register, tiers, limits, cleanup, summary)
-- [x] ✅ **MODULE GATE:** test_agent_model_integration.py ✅
-  - [x] test_agent_calls_model_via_router() ✅
-  - [x] test_worker_generates_code() ✅
-  - [x] test_agent_lifecycle_spawn_to_terminate() ✅
-
-
-### Week 5-6: Tools + Terminal ✅ COMPLETE (328 total tests passing)
-
-- [x] **tools/base.py** — BaseTool interface ✅
-  - [x] test_base_and_registry.py ✅ (10 tests: schema, validation, permissions)
-- [x] **tools/registry.py** — ToolRegistry ✅
-- [x] **tools/builtin/file_read.py** — FileRead tool ✅
-  - [x] test_file_tools.py ✅ (12 tests: read, write, edit, sandboxing)
-- [x] **tools/builtin/file_write.py** — FileWrite tool ✅
-- [x] **tools/builtin/file_edit.py** — FileEdit tool ✅
-- [x] **tools/builtin/terminal.py** — Terminal tool ✅
-  - [x] test_terminal.py ✅ (7 tests: execution, timeout, blocking)
-- [x] **tools/builtin/search.py** — Search tool ✅
-- [x] **tools/builtin/git.py** — Git tool ✅
-- [x] **tools/builtin/tree.py** — Directory tree tool ✅
-  - [x] test_tree.py ✅ (3 tests: display, ignore, security)
-- [x] **terminal/manager.py** — TerminalManager + TerminalSession (tmux) ✅
-- [x] ✅ **MODULE GATE:** test_tools_integration.py ✅
-  - [x] test_agent_uses_file_tools() ✅
-  - [x] test_agent_runs_terminal_command() ✅
-  - [x] test_permission_blocks_unauthorized_tool() ✅
-
-### Week 7-8: Orchestrator + Vault + CLI + Terminal UX ✅ COMPLETE (372 total tests passing)
-
-- [x] **orchestrator/task_graph.py** — DAG manager ✅
-  - [x] test_task_graph.py ✅ (14 tests: add, ready, critical path, serialization, dynamic insert)
-- [x] **orchestrator/scheduler.py** — VRAM-aware scheduler ✅
-- [x] **orchestrator/orchestrator.py** — Orchestrator engine ✅
-- [x] **orchestrator/escalation.py** — 5-level EscalationManager ✅
-  - [x] test_escalation.py ✅ (9 tests: all 5 levels, max, history, retries)
-- [x] **forge/validator.py** — ContinuousValidator ✅
-  - [x] test_validator.py ✅ (6 tests: syntax, imports, lint, file validation)
-- [x] **vault/checkpoint.py** — Checkpoint engine ✅
-  - [x] test_vault.py ✅ (7 tests: create, load, crash marker, recovery)
-- [x] **cli/app.py** — Main CLI app (typer) ✅
-- [x] **cli/colors.py** — GalaxyColors design constants ✅
-- [x] **cli/views/boot.py** — BootRenderer (ASCII logo + steps) ✅
-- [x] **cli/setup_helper.py** — Auto-detect hardware ✅
-- [x] ✅ **MODULE GATE:** test_orchestrator_integration.py ✅
-  - [x] test_full_pipeline_plan_to_execute() ✅
-  - [x] test_checkpoint_and_resume() ✅
-  - [x] test_orchestrator_events() ✅
-
-### Week 9-10: E2E Testing + Polish ✅ COMPLETE (380 total tests passing)
-
-- [x] ✅ **PHASE GATE:** test_e2e_phase1.py ✅
-  - [x] test_build_simple_python_script() ✅
-  - [x] test_build_rest_api() ✅ (multi-file with dependency chain)
-  - [x] test_crash_and_recover() ✅
-  - [x] test_pause_swap_model_resume() ✅
-  - [x] test_multi_worker_parallel() ✅ (5 tasks, 3 workers)
-  - [x] test_tool_and_validator() ✅
-  - [x] test_full_lifecycle() ✅ (boot → plan → execute → checkpoint → shutdown)
-  - [x] test_event_propagation() ✅
-- [x] README.md — Complete documentation ✅
-- [x] pip package configured (pyproject.toml scripts entry) ✅
-
-**Phase 1 COMPLETE: 40+ source files + 30+ test files, 380 tests passing in 11.5s**
+```
+USER
+  ↓
+BRAINSTORM ENGINE
+  ├── Temp Ideas (exploration)
+  ├── Permanent Ideas (approved truth)
+  └── Decision Logger (timestamps, history)
+  ↓
+MASTER COGNITIVE PIPELINE
+  ├── [Normal Mode] Direct planning
+  └── [Reasoning Mode]
+      ├── Prompt Expander → structured spec
+      ├── Planner → dependency-aware DAG
+      ├── Retriever → context assembly
+      ├── Reflection → validate plan
+      └── Synthesizer → final plan
+  ↓
+DOMAIN AGENTS → Execution Contracts
+  { target_file, function, signature, dependencies, constraints, validation }
+  ↓
+WORKERS → Code Chunks
+  { target_file, target_symbol, operation, content, dependencies }
+  ↓
+INTEGRATOR → Merges chunks into files
+  ↓
+FORGE → BUILD/TEST/FIX → OUTPUT
+  ↓ (optional, or standalone)
+AUDIT SYSTEM
+  ├── Engineering Audit (quality, architecture, maintainability)
+  ├── Security Audit (OWASP, CVEs, secrets, injection, auth)
+  ├── Production Audit (CI/CD, monitoring, scaling, config)
+  └── Remediation Pipeline (fix → verify → report)
+```
 
 ---
 
-## PROJECT TODO — PHASE 2: Memory & Intelligence (Weeks 11-18)
+## PHASE 1: Foundation ✅ COMPLETE
 
-> **Goal:** Galaxy remembers context, understands code structure, recovers from crashes
+> 52 source files, 36 test files, **381 tests passing**
 
-### Week 11-12: Memory Foundation
+Working Galaxy: `galaxy run "prompt"` → Master → Domain → Workers → Files → Validation
 
-- [ ] **memory/types.py** — Memory data models (MemoryEntry, MemoryLevel, etc.)
-  - [ ] test_memory_types.py
+---
+
+## PHASE 2: Cognitive Engine (Weeks 11-20) ✅ COMPLETE
+
+> **Goal:** Galaxy thinks before it acts — brainstorming, contracts, chunks, cognitive pipeline
+> **Result:** 92 source files, 75 test files, **784 tests passing**
+
+### Week 11-12: Brainstorming Engine ✅
+
+- [x] **brainstorm/types.py** — Idea, IdeaStatus, BrainstormSession models
+  - [x] test_brainstorm_types.py
+- [x] **brainstorm/temp_store.py** — Temp ideas store (exploration)
+  - [x] test_temp_store.py
+- [x] **brainstorm/permanent_store.py** — Permanent ideas store (approved truth)
+  - [x] test_permanent_store.py
+- [x] **brainstorm/decision_log.py** — Decision logger with timestamps/history
+  - [x] test_decision_log.py
+- [x] **brainstorm/engine.py** — BrainstormEngine (orchestrates session)
+  - [x] test_brainstorm_engine.py
+- [x] **brainstorm/interviewer.py** — Master asks clarifying questions
+- [x] **cli/commands/brainstorm.py** — `galaxy brainstorm` CLI command
+- [x] ✅ **MODULE GATE:** test_brainstorm_integration.py
+
+### Week 13-14: Structured Contracts + Chunk-Based Workers ✅
+
+- [x] **contracts/types.py** — ExecutionContract, CodeChunk, ChunkOperation models
+  - [x] test_contract_types.py
+- [x] **contracts/builder.py** — ContractBuilder (Domain agent uses this)
+  - [x] test_contract_builder.py
+- [x] **agents/domain.py** [UPGRADE] — Outputs ExecutionContracts
+  - [x] test_domain_contracts.py
+- [x] **agents/worker.py** [UPGRADE] — Generates CodeChunks from contracts
+  - [x] test_worker_chunks.py
+- [x] **integrator/types.py** — MergeOperation, FileState, ConflictInfo
+- [x] **integrator/merger.py** — Merges code chunks into files
+  - [x] test_merger.py
+- [x] **integrator/conflict.py** — Conflict detection + resolution
+  - [x] test_conflict.py
+- [x] **integrator/engine.py** — IntegratorEngine
+  - [x] test_integrator_engine.py
+- [x] ✅ **MODULE GATE:** test_contract_integration.py
+
+### Week 15-16: Cognitive Pipeline (Normal + Reasoning Modes) ✅
+
+- [x] **cognitive/types.py** — CognitiveMode (NORMAL, REASONING), PipelineStage
+- [x] **cognitive/expander.py** — PromptExpander (vague → structured spec)
+  - [x] test_expander.py
+- [x] **cognitive/planner.py** — CognitivePlanner (spec → dependency DAG)
+  - [x] test_planner.py
+- [x] **cognitive/retriever.py** — ContextRetriever (fetch relevant context)
+  - [x] test_retriever.py
+- [x] **cognitive/reflection.py** — ReflectionAgent (critique + verify)
+  - [x] test_reflection.py
+- [x] **cognitive/synthesizer.py** — FinalSynthesizer
+- [x] **cognitive/pipeline.py** — CognitivePipeline (orchestrates the chain)
+  - [x] test_pipeline.py
+- [x] **agents/master.py** [UPGRADE] — Master uses CognitivePipeline
+  - [x] test_master_cognitive.py
+- [x] ✅ **MODULE GATE:** test_cognitive_integration.py
+
+### Week 17-18: Project Source-of-Truth + Interactive CLI ✅
+
+- [x] **project/spec.py** — ProjectSpec data model (`.galaxy/project.yaml`)
+  - [x] test_project_spec.py
+- [x] **project/loader.py** — Load/save project spec (YAML)
+  - [x] test_loader.py
+- [x] **project/reconstructor.py** — Rebuild project from spec
+  - [x] test_reconstructor.py
+- [x] **project/analyzer.py** — Read existing project → generate spec
+  - [x] test_analyzer.py
+- [x] **cli/commands/chat.py** — `galaxy chat` interactive mode
+- [x] **cli/commands/config.py** — `galaxy config set/get/show`
+- [x] **cli/confirm.py** — Permission/approval gate before execution
+  - [x] test_confirm.py
+
+### Week 19-20: Cloud Scaling + Terminal Dashboard + Integration ✅
+
+- [x] **scaling/limiter.py** — Soft limits + permission escalation for cloud
+  - [x] test_limiter.py
+- [x] **scaling/cost_estimator.py** — Estimate token cost before execution
+- [x] **cli/views/dashboard.py** — Live terminal dashboard (Rich Live)
+- [x] **cli/views/activity.py** — Activity feed view
+- [x] **cli/views/taskgraph.py** — ASCII DAG view
+- [x] **cli/keyboard.py** — Hotkey controller ([Tab], [Space], [Q])
+- [x] Wire: brainstorm → cognitive → contracts → chunks → integrator → forge
+- [x] ✅ **PHASE GATE:** test_e2e_phase2.py
+
+**Phase 2 Total: 40 new source + 39 new test files, 784 tests passing**
+
+---
+
+## PHASE 3: Intelligence Layer (Weeks 21-28)
+
+> **Goal:** Memory, code intelligence, build/test/fix loop, auto-docs
+
+### Week 21-22: Memory Foundation
+
+- [ ] **memory/types.py** — MemoryEntry, MemoryLevel, MemoryScope
 - [ ] **memory/store.py** — File-based persistence
-  - [ ] test_store.py
 - [ ] **memory/embeddings.py** — Ollama embedding integration
-  - [ ] test_embeddings.py
 - [ ] **memory/vector_store.py** — Numpy cosine similarity search
-  - [ ] test_vector_store.py
 - [ ] **memory/manager.py** — MemoryManager API
-  - [ ] test_manager.py → test_store_retrieve(), test_search_by_embedding(), test_scoped_memory()
 - [ ] **memory/hierarchy.py** — 5-level memory scoping
-  - [ ] test_hierarchy.py → test_level_isolation(), test_cross_level_search()
 
-### Week 13-14: Cortex Foundation
+### Week 23-24: Cortex (Code Intelligence)
 
 - [ ] **cortex/parser.py** — tree-sitter multi-language parser
-  - [ ] test_parser.py → test_parse_python(), test_parse_typescript(), test_parse_invalid()
-- [ ] **cortex/graphs/ast_graph.py** — AST graph
-  - [ ] test_ast_graph.py
-- [ ] **cortex/graphs/symbol_graph.py** — Symbol graph
-  - [ ] test_symbol_graph.py
-- [ ] **cortex/graphs/import_graph.py** — Import/dependency graph
-  - [ ] test_import_graph.py
-- [ ] **cortex/graphs/call_graph.py** — Call graph
-  - [ ] test_call_graph.py
-- [ ] **cortex/graphs/api_graph.py** — API route graph
-- [ ] **cortex/graphs/dataflow_graph.py** — Data flow graph
+- [ ] **cortex/graphs/** — AST, symbol, import, call, API, dataflow graphs
 - [ ] **cortex/query.py** — Graph query API
-  - [ ] test_query.py
-- [ ] **cortex/engine.py** — CortexEngine (ties all graphs)
-  - [ ] test_engine.py
+- [ ] **cortex/engine.py** — CortexEngine
+- [ ] Wire Cortex → Integrator + Retriever
 
-### Week 15-16: Full Vault
+### Week 25-26: Build/Test/Fix Loop
 
-- [ ] **vault/wal.py** — Write-ahead log
-  - [ ] test_wal.py
-- [ ] **vault/checkpoint.py** — Full + incremental checkpoints (upgrade)
-- [ ] **vault/recovery.py** — Crash recovery manager
-  - [ ] test_recovery.py → test_detect_crash(), test_recover_state(), test_replay_events()
-- [ ] **vault/snapshot.py** — State serializer (upgrade)
-- [ ] Integrate memory state into checkpoints
-- [ ] Integrate cortex state into checkpoints
-- [ ] Terminal reattach on resume
+- [ ] **forge/runner.py** — Run generated code (pip install, pytest, uvicorn)
+- [ ] **forge/fixer.py** — Auto-fix failures → re-test
+- [ ] **forge/pipeline.py** — Generate → Test → Fix → Re-test → Deploy loop
+- [ ] Wire Forge → Escalation → Reflection
 
-### Week 17-18: Integration
+### Week 27-28: Auto-Documentation + Integration
 
-- [ ] Memory → Agent integration (context assembly)
-- [ ] Cortex → Orchestrator integration (dependency-aware planning)
-- [ ] Cortex → Scribe integration hooks (Phase 3 prep)
-- [ ] Memory → Compass integration hooks (Phase 5 prep)
-- [ ] Vault → Kernel integration (automatic checkpointing)
-- [ ] ✅ **PHASE GATE:** test_e2e_phase2.py
-  - [ ] test_memory_persistence_across_sessions()
-  - [ ] test_crash_recovery_full()
-  - [ ] test_model_swap_on_resume()
-  - [ ] test_cortex_dependency_aware_planning()
-
-**Phase 2 Total: ~25 source files + ~20 test files**
-
----
-
-## PROJECT TODO — PHASE 3: Quality & Governance (Weeks 19-24)
-
-> **Goal:** Galaxy enforces consistency, scores trust, auto-generates documentation
-
-### Week 19-20: Sentinel
-
-- [ ] **sentinel/style.py** — Style profile learning
-  - [ ] test_style.py
-- [ ] **sentinel/architecture.py** — Drift detection (via Cortex)
-  - [ ] test_architecture.py
-- [ ] **sentinel/naming.py** — Vocabulary governance
-  - [ ] test_naming.py
-- [ ] **sentinel/duplication.py** — Duplicate detection
-  - [ ] test_duplication.py
-- [ ] **sentinel/engine.py** — SentinelEngine daemon
-  - [ ] test_sentinel_engine.py
-
-### Week 21-22: Governance + Trust
-
-- [ ] **governance/policy.py** — Policy loader/evaluator
-  - [ ] test_policy.py
-- [ ] **governance/domains/security.py** — Security policy
-- [ ] **governance/domains/access_control.py** — Access control
-- [ ] **governance/domains/quality_gates.py** — Quality gates
-- [ ] **governance/engine.py** — GovernanceEngine
-  - [ ] test_governance_engine.py
-- [ ] **governance/audit.py** — Audit trail
-  - [ ] test_audit.py
-- [ ] **trust/scorer.py** — 4-dimension trust scoring
-  - [ ] test_scorer.py → test_score_calculation(), test_dimension_weights()
-- [ ] **trust/reputation.py** — Agent reputation tracker
-  - [ ] test_reputation.py
-- [ ] **trust/automation.py** — Trust-driven auto-merge/block
-  - [ ] test_automation.py
-
-### Week 23-24: Integration + Scribe
-
-- [ ] Wire Sentinel → Orchestrator (check every output)
-- [ ] Wire Governance → Tool execution (check every action)
-- [ ] Wire Trust → Merge decisions
-- [ ] Forge validator upgrade (full pipeline)
 - [ ] **scribe/engine.py** — ScribeEngine (auto-doc daemon)
-  - [ ] test_scribe_engine.py
-- [ ] **scribe/sync.py** — DocSyncManager (drift detection)
-  - [ ] test_scribe_sync.py
-- [ ] **scribe/generators/readme.py** — README.md generator
-- [ ] **scribe/generators/api_doc.py** — OpenAPI + Markdown
-- [ ] **scribe/generators/architecture.py** — Architecture + Mermaid diagrams
-- [ ] **scribe/generators/changelog.py** — CHANGELOG.md
-- [ ] **scribe/generators/docstring.py** — Inline docstrings
-- [ ] **scribe/generators/diagram.py** — Mermaid via Cortex
-- [ ] **scribe/generators/module_doc.py** — Per-module docs
-- [ ] Wire Scribe → Cortex, Forge, Sentinel
+- [ ] **scribe/generators/** — README, API doc, architecture, changelog
+- [ ] Wire Memory → Brainstorm, Cortex → Domain
 - [ ] ✅ **PHASE GATE:** test_e2e_phase3.py
-  - [ ] test_sentinel_detects_style_drift()
-  - [ ] test_governance_blocks_unsafe_action()
-  - [ ] test_trust_auto_merge()
-  - [ ] test_scribe_generates_docs()
-  - [ ] test_scribe_detects_drift()
 
-**Phase 3 Total: ~30 source files + ~20 test files**
+**Phase 3 Total: ~35 source + ~25 test files**
 
 ---
 
-## PROJECT TODO — PHASE 4: Collaboration & Scale (Weeks 25-32)
+## PHASE 4: Quality, Scale & Audit (Weeks 29-38)
 
-> **Goal:** Parallel workers coordinate safely, costs tracked, code auto-optimized
+> **Goal:** Governance, trust, parallel scale, cost tracking, **autonomous audit system**
 
-### Week 25-26: Sync
+### Week 29-30: Sentinel + Governance + Trust
 
-- [ ] **sync/lock_manager.py** — File-level locking
-  - [ ] test_lock_manager.py
-- [ ] **sync/changeset.py** — Changeset tracking
-  - [ ] test_changeset.py
-- [ ] **sync/intent.py** — Write intent declarations
-- [ ] **sync/conflict.py** — Conflict detection/resolution
-  - [ ] test_conflict.py
-- [ ] **sync/commit_order.py** — Deterministic commit ordering
-  - [ ] test_commit_order.py
+- [ ] **sentinel/** — Style enforcement, architecture drift, duplication detection
+- [ ] **governance/** — Policy engine, security, access control, quality gates
+- [ ] **trust/** — 4-dimension trust scoring, agent reputation, auto-merge
 
-### Week 27-28: Forge Labs + Refiner
+### Week 31-32: Sync + Refiner
 
-- [ ] **forge/labs.py** — Experiment branching (A/B)
-  - [ ] test_labs.py
-- [ ] **forge/scorer.py** — Branch scoring
-- [ ] **forge/promotion.py** — Winner promotion
-- [ ] **refiner/detectors/dead_code.py** — Dead code detector
-- [ ] **refiner/detectors/complexity.py** — Complexity detector
-- [ ] **refiner/detectors/duplication.py** — Duplication detector
-- [ ] **refiner/detectors/performance.py** — Performance detector
-- [ ] **refiner/detectors/security.py** — Security detector
-- [ ] **refiner/engine.py** — RefinerEngine
-  - [ ] test_refiner_engine.py
-- [ ] **refiner/optimizer.py** — Safe execution with rollback
+- [ ] **sync/** — File locking, changeset tracking, conflict resolution
+- [ ] **refiner/** — Dead code, complexity, duplication, performance, security detectors
 
-### Week 29-30: Distiller + Ledger
+### Week 33-34: Ledger + Distiller
 
-- [ ] **distiller/summarizer.py** — Memory summarization
-- [ ] **distiller/compactor.py** — Vector compaction
-- [ ] **distiller/pruner.py** — Memory pruning
-- [ ] **distiller/tiering.py** — Hot/warm/cold/frozen tiering
-- [ ] **distiller/engine.py** — DistillerEngine
-  - [ ] test_distiller_engine.py
-- [ ] **ledger/tracker.py** — Token/cost tracking
-  - [ ] test_tracker.py
-- [ ] **ledger/budget.py** — Budget enforcement
-  - [ ] test_budget.py
-- [ ] **ledger/reports.py** — Cost reports + suggestions
+- [ ] **ledger/** — Token/cost tracking, budget enforcement, cost reports
+- [ ] **distiller/** — Memory summarization, compaction, hot/warm/cold tiering
 
-### Week 31-32: Integration
+### Week 35-36: Audit System — Engineering & Security
 
-- [ ] Sync → Orchestrator (locking during parallel execution)
-- [ ] Distiller → Memory (automatic compression)
-- [ ] Ledger → Every inference call (automatic tracking)
-- [ ] Refiner → Scheduled background runs
-- [ ] 15+ parallel worker stress test
+> **NEW** — Autonomous production-grade audit, usable standalone or post-project
+
+- [ ] **audit/types.py** — Finding, Severity, AuditReport, AuditMode data models
+  - [ ] test_audit_types.py
+- [ ] **audit/scanner.py** — Base scanner interface (scoped code region analysis)
+  - [ ] test_scanner.py
+- [ ] **audit/engineering/quality.py** — Code quality analysis (complexity, duplication, dead code)
+  - [ ] test_engineering_quality.py
+- [ ] **audit/engineering/architecture.py** — Architecture analysis (patterns, dependencies, drift)
+  - [ ] test_engineering_architecture.py
+- [ ] **audit/engineering/coverage.py** — Test coverage analysis + gap detection
+  - [ ] test_engineering_coverage.py
+- [ ] **audit/security/vulnerability.py** — Vulnerability scanner (SQL injection, XSS, CSRF, path traversal)
+  - [ ] test_security_vulnerability.py
+- [ ] **audit/security/auth.py** — Authentication/authorization analysis
+  - [ ] test_security_auth.py
+- [ ] **audit/security/secrets.py** — Leaked credentials/API key detection
+  - [ ] test_security_secrets.py
+- [ ] **audit/security/dependencies.py** — Dependency CVE scanning
+  - [ ] test_security_dependencies.py
+- [ ] **audit/production/readiness.py** — Production readiness checks (logging, monitoring, error handling)
+  - [ ] test_production_readiness.py
+- [ ] **audit/production/config.py** — Configuration hardening analysis
+  - [ ] test_production_config.py
+
+### Week 37-38: Audit Orchestration + Remediation
+
+- [ ] **audit/orchestrator.py** — AuditOrchestrator (Master → Domain → Worker audit pipeline)
+  - [ ] test_audit_orchestrator.py
+- [ ] **audit/validator.py** — Multi-pass finding validation (removes hallucinations)
+  - [ ] test_audit_validator.py → test_removes_false_positives(), test_confidence_scoring()
+- [ ] **audit/remediation.py** — Auto-fix vulnerabilities + verify fixes
+  - [ ] test_remediation.py → test_fix_sql_injection(), test_fix_xss(), test_verify_fix()
+- [ ] **audit/reporter.py** — Generate structured audit reports (JSON + Markdown)
+  - [ ] test_reporter.py
+- [ ] **cli/commands/audit.py** — `galaxy audit` CLI command (standalone mode)
+  - `galaxy audit ./project` — Full audit
+  - `galaxy audit ./project --mode security` — Security only
+  - `galaxy audit ./project --mode engineering` — Engineering only
+  - `galaxy audit ./project --mode production` — Production readiness
+  - `galaxy audit ./project --fix` — Auto-remediate findings
+- [ ] Wire Audit → post-project-completion (optional step after `galaxy run`)
+- [ ] Wire Audit → Cortex (uses code graphs for deeper analysis)
+- [ ] Wire Audit → Sentinel/Governance (shares findings)
 - [ ] ✅ **PHASE GATE:** test_e2e_phase4.py
+  - [ ] test_engineering_audit_detects_issues()
+  - [ ] test_security_audit_finds_vulnerabilities()
+  - [ ] test_remediation_fixes_and_verifies()
+  - [ ] test_standalone_audit_on_existing_project()
+  - [ ] test_audit_confidence_filtering()
 
-**Phase 4 Total: ~25 source files + ~15 test files**
+**Phase 4 Total: ~55 source + ~30 test files**
 
 ---
 
-## PROJECT TODO — PHASE 5: Enterprise & Extensibility (Weeks 33-40)
+## Audit System — Detailed Flow
 
-> **Goal:** Plugin ecosystem, blueprints, cluster mode, Studio dashboard, strategic intent
+```
+┌─ galaxy audit ./project ─────────────────────────────────┐
+│                                                          │
+│  Phase 1: Cortex Scan                                    │
+│    → Build dependency/API/auth/secrets graphs            │
+│                                                          │
+│  Phase 2: Master Creates Audit Domains                   │
+│    → Engineering Domain                                  │
+│    → Security Domain                                     │
+│    → Production Domain                                   │
+│                                                          │
+│  Phase 3: Scoped Workers Analyze Code Regions            │
+│    ┌──────────────┬────────────────┬───────────────┐     │
+│    │ auth_worker  │ api_worker     │ db_worker     │     │
+│    │ config_worker│ secrets_worker │ deps_worker   │     │
+│    └──────────────┴────────────────┴───────────────┘     │
+│    Each worker → structured finding with confidence      │
+│                                                          │
+│  Phase 4: Domain Validates Findings                      │
+│    → Remove hallucinations                               │
+│    → Verify correctness                                  │
+│    → Correlate vulnerabilities                           │
+│    → Estimate blast radius                               │
+│                                                          │
+│  Phase 5: Master Creates Remediation Plan                │
+│    → Prioritize fixes by severity                        │
+│    → Assign repair workers                               │
+│    → Validate fixes                                      │
+│    → Re-scan to verify                                   │
+│                                                          │
+│  Phase 6: Generate Report                                │
+│    → JSON (machine-readable)                             │
+│    → Markdown (human-readable)                           │
+│    → Severity summary + fix status                       │
+│                                                          │
+└──────────────────────────────────────────────────────────┘
+```
 
-### Week 33-34: Plugin SDK
+### Worker Finding Format
 
-- [ ] **plugins/sdk.py** — Plugin SDK interface
-- [ ] **plugins/loader.py** — Plugin loader
-- [ ] **plugins/sandbox.py** — Process isolation
-- [ ] **plugins/permissions.py** — Capability permissions
-- [ ] **plugins/health.py** — Plugin health monitoring
-- [ ] **plugins/registry.py** — Plugin registry
-  - [ ] test_plugin_sdk.py → test_load_plugin(), test_sandbox_isolation(), test_permission_enforcement()
+```json
+{
+  "id": "SEC-042",
+  "severity": "HIGH",
+  "confidence": 0.91,
+  "category": "SQL Injection",
+  "file": "backend/routes/users.py",
+  "line": 82,
+  "code_snippet": "query = f\"SELECT * FROM users WHERE id={user_id}\"",
+  "description": "Unsanitized user input in SQL query",
+  "exploitability": "Remote, unauthenticated",
+  "recommended_fix": "Use parameterized queries",
+  "fix_content": "query = \"SELECT * FROM users WHERE id=?\"\ncursor.execute(query, (user_id,))"
+}
+```
 
-### Week 35-36: Blueprints
+---
 
-- [ ] **blueprints/loader.py** — Blueprint loader
-- [ ] **blueprints/generator.py** — Project scaffold generator
-- [ ] **blueprints/detector.py** — Auto-detect project type
-- [ ] **blueprints/templates/fullstack_web.yaml**
-- [ ] **blueprints/templates/rest_api.yaml**
-- [ ] **blueprints/templates/ml_pipeline.yaml**
-- [ ] **blueprints/templates/realtime_app.yaml**
-- [ ] **blueprints/templates/cli_tool.yaml**
-- [ ] **blueprints/templates/mobile_backend.yaml**
-  - [ ] test_blueprints.py → test_load_template(), test_generate_scaffold(), test_detect_project()
+## PHASE 5: Enterprise & Extensibility (Weeks 39-46)
 
-### Week 37-38: Cluster + Vault Extensions + Compass
+> **Goal:** Plugin ecosystem, blueprints, web dashboard, strategic intent
 
-- [ ] **cluster/topology.py** — Cluster topology manager
-- [ ] **cluster/node.py** — Node representation
-- [ ] **cluster/communication.py** — Cross-node event bus
-- [ ] **cluster/gpu_manager.py** — Multi-GPU cluster management
-- [ ] **vault/hibernate.py** — Project hibernation
-- [ ] **vault/export.py** — Cross-hardware .vault export/import
-- [ ] **compass/engine.py** — CompassEngine (intent processing)
-  - [ ] test_compass_engine.py → test_load_intent(), test_get_context(), test_evaluate_alignment()
-- [ ] **compass/intent.py** — Intent data models + .galaxy/intent.yaml
-  - [ ] test_intent.py → test_parse_intent_yaml(), test_priority_stack()
-- [ ] **compass/advisor.py** — StrategyAdvisor (per-subsystem guidance)
-  - [ ] test_advisor.py → test_advise_model_router(), test_advise_worker()
-- [ ] **compass/alignment.py** — AlignmentChecker (output scoring)
-  - [ ] test_alignment.py → test_security_violation_detected(), test_budget_violation()
-- [ ] **compass/evolution.py** — IntentEvolution (adapt over time)
-  - [ ] test_evolution.py → test_suggest_updates(), test_detect_conflicts()
-- [ ] Wire Compass → Orchestrator, Model Router, Workers, Trust, Governance, Scribe
+### Week 39-40: Plugins + Blueprints
 
-### Week 39-40: Studio Dashboard
+- [ ] **plugins/** — SDK, loader, sandbox, permissions, registry
+- [ ] **blueprints/** — Template loader, scaffold generator, auto-detect
 
-- [ ] **studio/server.py** — FastAPI server
+### Week 41-42: Compass (Strategic Intent)
+
+- [ ] **compass/** — Intent engine, strategy advisor, alignment checker, evolution
+
+### Week 43-44: Galaxy Studio (Web Dashboard)
+
+- [ ] **studio/server.py** — FastAPI backend
 - [ ] **studio/websocket.py** — Real-time WebSocket updates
-- [ ] **studio/api/agents.py** — Agent endpoints
-- [ ] **studio/api/tasks.py** — Task endpoints
-- [ ] **studio/api/models.py** — Model management endpoints
-- [ ] **studio/api/memory.py** — Memory endpoints
-- [ ] **studio/api/policies.py** — Policy endpoints
-- [ ] **studio/api/budget.py** — Budget endpoints
-- [ ] **studio/api/config.py** — Configuration endpoints
-- [ ] Studio Intent Dashboard view
-- [ ] Studio Documentation browser (Scribe output)
-- [ ] Studio frontend (React/Vite)
-- [ ] ✅ **PHASE GATE:** test_e2e_phase5.py
-  - [ ] test_plugin_load_and_execute()
-  - [ ] test_blueprint_scaffold()
-  - [ ] test_compass_intent_alignment()
-  - [ ] test_studio_api_endpoints()
+- [ ] **studio/api/** — Agents, tasks, models, memory, brainstorm, audit, config
+- [ ] **studio/frontend/** — React/Vite dashboard
+  - Brainstorm view (temp/permanent ideas)
+  - Task graph visualization
+  - Agent status monitoring
+  - Audit results dashboard
+  - Cost dashboard
+  - Configuration UI
 
-**Phase 5 Total: ~45 source files + ~15 test files**
+### Week 45-46: Integration
+
+- [ ] ✅ **PHASE GATE:** test_e2e_phase5.py
+
+**Phase 5 Total: ~50 source + ~15 test files**
 
 ---
 
-## PROJECT TODO — PHASE 6: Autonomous Operations (Weeks 41-46)
+## PHASE 6: Autonomous Operations (Weeks 47-52)
 
-> **Goal:** Galaxy self-improves, learns skills, community ecosystem
+> **Goal:** Self-improvement, learning, community ecosystem
 
-- [ ] **ProactiveRefiner** — Scheduled idle-time optimization
-- [ ] **HierarchicalIndex** — Multi-level vector search (L0-L3)
-- [ ] **WASMSandbox** — WASM plugin isolation
-- [ ] **PluginRegistry** — Community plugin marketplace
-- [ ] **BlueprintRegistry** — Community blueprint marketplace
-- [ ] **KnowledgeTransfer** — Cross-workspace learning
-- [ ] **SkillManager** — Record + replay successful task patterns
-- [ ] **AutonomousCompass** — Auto-evolve intent, cross-project learning
-- [ ] **AutonomousScribe** — Scheduled drift repair, cross-reference audit
+- [ ] ProactiveRefiner, SkillManager, KnowledgeTransfer
+- [ ] AutonomousCompass, AutonomousScribe
+- [ ] Community plugin/blueprint marketplace
+- [ ] WASM sandbox isolation
 - [ ] ✅ **PHASE GATE:** test_e2e_phase6.py
 
-**Phase 6 Total: ~20 source files + ~10 test files**
+**Phase 6 Total: ~20 source + ~10 test files**
 
 ---
 
-## VERIFICATION PLAN
+## Updated Summary
 
-### Automated Tests (every phase)
-```bash
-pytest tests/unit/ -v                        # Unit tests
-pytest tests/integration/ -v                 # Integration tests
-pytest tests/e2e/ -v --slow                  # E2E tests (requires Ollama)
-pytest --cov=galaxy --cov-report=html        # Coverage (target 80%+)
-mypy src/galaxy/ --strict                    # Type checking
-ruff check src/galaxy/ && ruff format src/   # Linting
-```
-
-### Key E2E Test Scenarios
-```
- 1. Single worker file generation + validation
- 2. Multi-worker parallel execution (no conflicts)
- 3. Crash recovery (kill mid-execution, restart)
- 4. Pause/resume (pause, swap models, resume)
- 5. Model fallback (local fails → cloud escalation)
- 6. Memory persistence (stop, restart, memories intact)
- 7. Trust scoring accuracy
- 8. Policy enforcement (blocked = actually blocked)
- 9. Escalation chain (Worker → Domain → Master → Fallback → User)
-10. Unified startup (CLI + Studio together)
-11. Scribe doc generation (file created → docs auto-generated)
-12. Scribe drift detection (code changed → stale docs repaired)
-13. Compass intent alignment (security intent → blocks insecure code)
-14. Compass model routing (budget: minimal → local models)
-15. Compass intent evolution (project grows → update suggested)
-```
-
-### Manual Verification
-- `pip install .` → `galaxy setup` → `galaxy run "Build a REST API"` works end-to-end
-- Studio dashboard opens and shows live data
-- Crash mid-build → `galaxy resume` recovers cleanly
+| Phase | Weeks | Source+Test | What You Get |
+|-------|-------|-------------|-------------|
+| **1** ✅ | 1-10 | 52+36 | Working Galaxy: prompt → 3-tier → code generation |
+| **2** ✅ | 11-20 | 92+75 | Brainstorming, Cognitive Pipeline, Contracts, Chunks, Dashboard |
+| **3** | 21-28 | ~35+25 | Memory, Code Intelligence, Build/Test/Fix loop, Auto-docs |
+| **4** | 29-38 | ~55+30 | Governance, Trust, Scale, Cost, **Audit System** |
+| **5** | 39-46 | ~50+15 | Plugins, Blueprints, Compass, Galaxy Studio (Web) |
+| **6** | 47-52 | ~20+10 | Self-improvement, Skills, Marketplace |
+| **Total** | **52 weeks** | **~284+191** | **Full Galaxy AI Cognitive Engineering OS** |
 
 ---
 
-## SUMMARY
-
-| Phase | Weeks | Files | What You Get |
-|-------|-------|-------|-------------|
-| **1** | 1-10 | ~65 | Working Galaxy: boot → plan → execute → validate → output |
-| **2** | 11-18 | ~25 | Memory, code intelligence, crash recovery |
-| **3** | 19-24 | ~30 | Quality enforcement, trust scoring, auto-docs |
-| **4** | 25-32 | ~25 | Safe parallel workers, cost tracking, optimization |
-| **5** | 33-40 | ~45 | Plugins, blueprints, Compass intent, Studio dashboard |
-| **6** | 41-46 | ~20 | Self-improvement, skills, community marketplace |
-| **Total** | **46 weeks** | **~200** | **Full Galaxy AI Operating System** |
+## Open Questions
 
 > [!IMPORTANT]
-> **We start with Phase 1.** After Phase 1 completes, you'll have a working Galaxy that can plan a project, spawn agents, generate code, validate it, and output results. Each subsequent phase adds intelligence layers on top.
+> ### 1. Chunk granularity
+> Function-level (safest) or block-level (flexible)? Recommend: start function-level.
 
-> [!NOTE]
-> **First file we create:** `pyproject.toml` → then `core/constants.py` → then `core/exceptions.py` → building up layer by layer with tests at every step.
+> [!IMPORTANT]
+> ### 2. Brainstorming storage format
+> YAML (human readable) or JSON? Recommend: YAML.
+
+> [!IMPORTANT]
+> ### 3. Project spec file name
+> Recommend: `.galaxy/project.yaml`
+
+> [!WARNING]
+> ### 4. Cognitive pipeline cost
+> Reasoning mode = 5 LLM calls per task. Show cost estimate + require approval?
+
+> [!IMPORTANT]
+> ### 5. Audit hallucination prevention
+> Multi-pass validation is critical. Recommend: minimum 2 verification passes + confidence threshold (≥0.7) before reporting findings.
